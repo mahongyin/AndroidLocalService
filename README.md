@@ -2,6 +2,8 @@
 
 ### [**Demo下载体验**](https://www.pgyer.com/MLpo)
 
+#### 注意：硬性协定：如果服务使用application/json作为Content-Type,方法参数必须只有一个，且参数名必须为"json"
+
 1. 添加依赖
 
 ```groovy

@@ -15,8 +15,18 @@ abstract class PCService {
     fun getIndexFileName() = "test_page.html"
 
     @Get("saveData")
-    fun saveData(content: String) {
+    fun saveData(content: String) :String{
         LiveDataHelper.saveDataLiveData.postValue(content + UUID.randomUUID());
+        return content;
+    }
+
+    /** 如果 application/json 参数必须单个且名是"json"
+     *  json = { "key1": "value", "key2":{}, "key3":[], "key4":111 }
+     */
+    @Get("saveJson")
+    fun saveJson(json: String) :String{
+        LiveDataHelper.saveDataLiveData.postValue(json);
+        return json;
     }
 
     @Get("queryAppInfo")

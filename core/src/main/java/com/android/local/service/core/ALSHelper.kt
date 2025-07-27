@@ -103,11 +103,11 @@ object ALSHelper {
                 Log.d(TAG, "initService《${serviceInfo.serviceName}》服务已关闭")
             }
             service.start()
-            Log.d(TAG, "initPCService《${serviceInfo.serviceName}》服务已《《启动》》，端口号：$servicePort")
+            Log.d(TAG, "initService《${serviceInfo.serviceName}》服务已《《启动》》，端口号：$servicePort")
         } catch (e: Exception) {
             Log.d(
                 TAG,
-                "initPCService《${serviceInfo.serviceName}》服务启动《《失败》》，端口号：$servicePort  失败原因是：" + e.message
+                "initService《${serviceInfo.serviceName}》服务启动《《失败》》，端口号：$servicePort  失败原因是：" + e.message
             )
         }
     }

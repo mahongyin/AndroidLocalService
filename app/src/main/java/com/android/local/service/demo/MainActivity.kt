@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
         ALSHelper.startServices(
             listOf(
                 ServiceConfig(PCService::class.java),
+                //不传默认是AndroidService类中@Service注解中的端口号
                 ServiceConfig(OtherService::class.java, 4444)
             )
         )

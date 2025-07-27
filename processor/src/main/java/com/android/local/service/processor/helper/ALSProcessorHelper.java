@@ -30,6 +30,7 @@ public class ALSProcessorHelper {
 
     private static final String AUTO_CREATE_CLASS_PREFIX = "ALS_";
 
+    private static final String AFTER_PARAM_NAME = "contentType";
     private static final String FIRST_PARAM_NAME = "action";
     private static final String SECOND_PARAM_NAME = "paramsMap";
 
@@ -109,9 +110,11 @@ public class ALSProcessorHelper {
                 .addMethod(MethodSpec.methodBuilder(REQUEST_LISTENER_METHOD_NAME)
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override.class)
+                        /*.addParameter(String.class, AFTER_PARAM_NAME)*/
                         .addParameter(String.class, FIRST_PARAM_NAME)
                         .addParameter(Map.class, SECOND_PARAM_NAME)
                         .addStatement("return $N($N, $N)", METHOD_NAME, FIRST_PARAM_NAME, SECOND_PARAM_NAME)
+                        /*.addStatement("return $N($N, $N, $N)", METHOD_NAME, AFTER_PARAM_NAME, FIRST_PARAM_NAME, SECOND_PARAM_NAME)*/
                         .returns(ClassName.get(METHOD_RETURN_TYPE_PACKAGE_NAME, METHOD_RETURN_TYPE))
                         .build())
                 .build();
@@ -161,6 +164,7 @@ public class ALSProcessorHelper {
         builder = MethodSpec.methodBuilder(METHOD_NAME)
                 .addModifiers(Modifier.PUBLIC)
                 .returns(ClassName.get(METHOD_RETURN_TYPE_PACKAGE_NAME, METHOD_RETURN_TYPE))
+                /*.addParameter(String.class, AFTER_PARAM_NAME)*/
                 .addParameter(String.class, FIRST_PARAM_NAME)
                 .addParameter(ParameterizedTypeName.get(Map.class, String.class, String.class), SECOND_PARAM_NAME);
 
@@ -231,6 +235,10 @@ public class ALSProcessorHelper {
                 TypeMirror paramType = variableElement.asType();
                 log("《Get注解》Param参数 key = " + paramKey + "-----paramType = " + paramType);
                 builder.addStatement("String $N = $N.get($S)", paramKey, SECOND_PARAM_NAME, paramKey);
+
+                /*builder.beginControlFlow("if (contentType.contains($S))", "application/json")
+                        .addStatement("$N = $N.get($S)", paramKey, SECOND_PARAM_NAME, "json")
+                        .endControlFlow();*/
 
                 builder.beginControlFlow("if ($N == null)", paramKey)
                         .addStatement("$N = $S", paramKey, ALSUtils.getDefaultValueByParamTypeWhenNull(paramKey, paramType))

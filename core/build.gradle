@@ -28,7 +28,6 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.code.gson:gson:2.8.6'
     api files('libs/nanohttpd-2.3.5-SNAPSHOT.jar')
 }
 
