@@ -5,7 +5,13 @@ import android.util.Log
 import com.android.local.service.core.ALSHelper
 import com.android.local.service.core.i.RequestListener
 import com.google.gson.Gson
-import fi.iki.elonen.NanoHTTPD
+import org.nanohttpd.protocols.http.IHTTPSession
+import org.nanohttpd.protocols.http.NanoHTTPD
+import org.nanohttpd.protocols.http.request.Method
+import org.nanohttpd.protocols.http.response.Response
+import org.nanohttpd.protocols.http.response.Response.newChunkedResponse
+import org.nanohttpd.protocols.http.response.Response.newFixedLengthResponse
+import org.nanohttpd.protocols.http.response.Status
 import java.io.IOException
 
 class ALSService(port: Int) : NanoHTTPD(port) {
@@ -65,7 +71,7 @@ class ALSService(port: Int) : NanoHTTPD(port) {
         result["message"] = message
         result["data"] = data
         return newFixedLengthResponse(
-            Response.Status.OK,
+            Status.OK,
             mimeTypes()["json"],
             Gson().toJson(result)
         )
@@ -77,7 +83,7 @@ class ALSService(port: Int) : NanoHTTPD(port) {
         return try {
             val stream = assetManager.open(fileName)
             val extension: String = getFileExtensionName(fileName)
-            newChunkedResponse(Response.Status.OK, mimeTypes()[extension], stream)
+            newChunkedResponse(Status.OK, mimeTypes()[extension], stream)
         } catch (e: IOException) {
             e.printStackTrace()
             Log.e(TAG, "File not exist. $fileName")
@@ -87,7 +93,7 @@ class ALSService(port: Int) : NanoHTTPD(port) {
 
     private fun fileNotFoundResponse(error: String = "Error 404, file not found."): Response {
         return newFixedLengthResponse(
-            Response.Status.NOT_FOUND,
+            Status.NOT_FOUND,
             MIME_PLAINTEXT,
             error
         )

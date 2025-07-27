@@ -35,8 +35,7 @@ public class ALSProcessorHelper {
 
     private static final String METHOD_NAME = "handleRequest";
     private static final String METHOD_RETURN_TYPE = "Response";
-    private static final String METHOD_RETURN_TYPE_PACKAGE_NAME = "fi.iki.elonen.NanoHTTPD";
-
+    private static final String METHOD_RETURN_TYPE_PACKAGE_NAME = "org.nanohttpd.protocols.http.response";
     private static final String SERVICE_PACKAGE_NAME = "com.android.local.service.core.service";
     private static final String SERVICE_CLASS_NAME = "ALSService";
     private static final String SERVICE_FIELD_NAME = "realService";

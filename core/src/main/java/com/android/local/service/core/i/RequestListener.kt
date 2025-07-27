@@ -1,7 +1,7 @@
 package com.android.local.service.core.i
 
-import fi.iki.elonen.NanoHTTPD
+import org.nanohttpd.protocols.http.response.Response
 
 interface RequestListener {
-    fun onRequest(action: String, params: Map<String, String>): NanoHTTPD.Response
+    fun onRequest(action: String, params: Map<String, String>): Response
 }
