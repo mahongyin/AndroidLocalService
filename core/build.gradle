@@ -4,11 +4,13 @@ plugins {
 }
 
 android {
-    compileSdk 28
+    //noinspection GradleDependency
+    compileSdk 29
 
     defaultConfig {
         minSdk 21
-        targetSdk 28
+        //noinspection ExpiredTargetSdkVersion
+        targetSdk 29
         consumerProguardFiles "consumer-rules.pro"
     }
 

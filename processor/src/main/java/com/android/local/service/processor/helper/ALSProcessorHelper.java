@@ -228,7 +228,7 @@ public class ALSProcessorHelper {
         log("《Get注解》修饰的方法名：" + methodName);
         log("《Get注解》内的值：" + value);
         log("《Get注解》修饰的方法的返回值类型：" + element.getReturnType());
-
+        // 进程安全
         StringBuffer stringBuffer = new StringBuffer();
         //拼接方法参数
         stringBuffer.append("(");

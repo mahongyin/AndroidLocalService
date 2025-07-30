@@ -1,6 +1,5 @@
 package com.android.local.service.demo.service
 
-import android.util.Log
 import com.android.local.service.BuildConfig
 import com.android.local.service.annotation.Get
 import com.android.local.service.annotation.Page
@@ -8,7 +7,6 @@ import com.android.local.service.annotation.Service
 import com.android.local.service.annotation.UpFile
 import com.android.local.service.annotation.UpJson
 import com.android.local.service.demo.livedata.LiveDataHelper
-import java.io.File
 import java.util.UUID
 
 @Service(port = 2222)

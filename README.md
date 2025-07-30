@@ -14,53 +14,53 @@
 
 ```kotlin
    //@Service标记这是一个服务，端口号是服务器的端口号，注意端口号唯一
-   @Service(port = 2222)
-   abstract class AndroidService {
-   
-       //@Page标注页面类，打开指定h5页面
-       @Page("index")
-       fun getIndexFileName() = "test_page.html"
-       
-       //@Get注解在方法上边
-       @Get("query")
-        fun query(
-            aaa: Boolean,
-            bbb: Double,
-            ccc: Float,
-            ddd: String,
-            eee: Int,
-        ): List<String> {
-            return listOf("$aaa", "$bbb", "$ccc", "$ddd", "$eee")
-        }
-    
-       @Get("saveData")
-       fun saveData(content: String) {
-           LiveDataHelper.saveDataLiveData.postValue(content + UUID.randomUUID());
-       }
-   
-       @Get("queryAppInfo")
-       fun getAppInfo(): HashMap<String, Any> {
-           return hashMapOf(
-               "applicationId" to BuildConfig.APPLICATION_ID,
-               "versionName" to BuildConfig.VERSION_NAME,
-               "versionCode" to BuildConfig.VERSION_CODE,
-               "uuid" to UUID.randomUUID(),
-           )
-       }
-   }
+@Service(port = 2222)
+abstract class AndroidService {
+
+    //@Page标注页面类，打开指定h5页面
+    @Page("index")
+    fun getIndexFileName() = "test_page.html"
+
+    //@Get注解在方法上边
+    @Get("query")
+    fun query(
+        aaa: Boolean,
+        bbb: Double,
+        ccc: Float,
+        ddd: String,
+        eee: Int,
+    ): List<String> {
+        return listOf("$aaa", "$bbb", "$ccc", ddd, "$eee")
+    }
+
+    @Get("saveData")
+    fun saveData(content: String) {
+        LiveDataHelper.saveDataLiveData.postValue(content + UUID.randomUUID())
+    }
+
+    @Get("queryAppInfo")
+    fun getAppInfo(): HashMap<String, Any> {
+        return hashMapOf(
+            "applicationId" to BuildConfig.APPLICATION_ID,
+            "versionName" to BuildConfig.VERSION_NAME,
+            "versionCode" to BuildConfig.VERSION_CODE,
+            "uuid" to UUID.randomUUID(),
+        )
+    }
+}
 ```
 
 3、初始化服务
 
 ```kotlin
-        ①、初始化（建议在application中初始化）
+        //①、初始化（建议在application中初始化）
         ALSHelper.init(this)
         
-        ②、启动服务 
-        启动单个服务：
+        //②、启动服务 
+        //启动单个服务：
         ALSHelper.startService(ServiceConfig(AndroidService::class.java))
 
-        启动多个服务：
+        //启动多个服务：
         ALSHelper.startServices(
             listOf(
                 ServiceConfig(PCService::class.java),
@@ -68,7 +68,7 @@
             )
         )
         
-        ③、如需修改服务端口号可以在启动服务时候传入新的端口号
+        //③、如需修改服务端口号可以在启动服务时候传入新的端口号
         //第一个参数是创建的服务类，第二个参数是 端口号，不传默认是AndroidService类中@Service注解中的端口号
         ServiceConfig(AndroidService::class.java, 9527)
 ```

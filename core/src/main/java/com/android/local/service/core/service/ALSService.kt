@@ -38,6 +38,7 @@ class ALSService(port: Int) : NanoHTTPD(port) {
         this.requestListener = listener
     }
 
+    @Deprecated("Deprecated in Java")
     override fun serve(session: IHTTPSession): Response {
         val method = session.method
         val uri = session.uri
@@ -155,7 +156,7 @@ class ALSService(port: Int) : NanoHTTPD(port) {
                 }
             }
             result.putAll(formFields)
-            var list = arrayListOf<Map<String, Any>>()
+
             listFile.forEach {
                 val fieldName = it["field_name"] as String
                 if (filesInfo.containsKey(fieldName) && filesInfo[fieldName] != null) {
@@ -167,9 +168,10 @@ class ALSService(port: Int) : NanoHTTPD(port) {
             filesInfo.forEach {
                 result[it.key] = listToJSONArray(it.value).toString()
             }
-            /*if (listFile.isNotEmpty()) {
-                result["uploaded_files"] = listToJSONArray(listFile).toString() //mapToJSONObject(filesInfo).toString()
-            }*/
+            //if (listFile.isNotEmpty()) {
+                //result["uploaded_files"] = listToJSONArray(listFile).toString()
+                //result["uploaded_files"] = mapToJSONObject(filesInfo).toString()
+            //}
         } catch (e: Exception) {
             e.printStackTrace()
             Log.e(TAG, "Error handling multipart data: ${e.message}")
@@ -261,9 +263,9 @@ class ALSService(port: Int) : NanoHTTPD(port) {
         for (key in jsonObject.keys()) {
             val value = jsonObject[key]
             if (value is JSONObject) {
-                map[key] = jsonToMap(value as JSONObject)
+                map[key] = jsonToMap(value)
             } else if (value is JSONArray) {
-                map[key] = jsonArrayToList(value as JSONArray)
+                map[key] = jsonArrayToList(value)
             } else {
                 map[key] = value
             }
