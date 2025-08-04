@@ -6,7 +6,7 @@ plugins {
 android {
     //noinspection GradleDependency
     compileSdk 29
-
+    namespace 'com.android.local.service.core'
     defaultConfig {
         minSdk 21
         //noinspection ExpiredTargetSdkVersion
