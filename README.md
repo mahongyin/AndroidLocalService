@@ -1,13 +1,14 @@
 # android local service 安卓本地微服务架构
+本项目基于lygttpod扩展，增加了兼容文件上传multipart/form-data 和json类型 application/json
 
 ### [**Demo下载体验**](https://www.pgyer.com/MLpo)
 
 1. 添加依赖
 
 ```groovy
-    implementation 'io.github.lygttpod.android-local-service:core:0.0.1'
-    implementation 'io.github.lygttpod.android-local-service:annotation:0.0.1'
-    kapt 'io.github.lygttpod.android-local-service:processor:0.0.1'
+    implementation 'io.github.mahongyin.android-local-service:core:0.0.3'
+    implementation 'io.github.mahongyin.android-local-service:annotation:0.0.3'
+    kapt 'io.github.mahongyin.android-local-service:processor:0.0.3'
 ```
 
 2. 创建本地服务（具体效果可以看项目demo） 定义如下类
@@ -35,6 +36,16 @@ abstract class AndroidService {
 
     @Get("saveData")
     fun saveData(content: String) {
+        LiveDataHelper.saveDataLiveData.postValue(content + UUID.randomUUID())
+    }
+    // 文件参数需要注解@UpFile
+    @Get("saveFile")
+    fun saveData(@UpFile file: File, content: String) {
+        LiveDataHelper.saveDataLiveData.postValue(content + UUID.randomUUID())
+    }   
+    // json参数需要注解@UpJson
+    @Get("saveJson")
+    fun saveData(@UpJson json: String) {
         LiveDataHelper.saveDataLiveData.postValue(content + UUID.randomUUID())
     }
 
