@@ -37,7 +37,7 @@ mavenPublishing {
     def projectDirName = rootProject.projectDir.name//def projectName =rootProject.rootDir.name//项目文件夹名
 
     def gitRepo = "github.com/mahongyin"
-    def versionName = "0.0.2"
+    def versionName = "0.0.3"
     def groupName = "io.github.mahongyin.$projectDirName" //自行分辨 用项目名还是目录名
 
     //  获取当前模块名
