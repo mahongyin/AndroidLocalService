@@ -32,16 +32,17 @@ apply plugin: 'com.vanniktech.maven.publish'
 //}
 
 mavenPublishing {
-// 获取当前模块名
-    def moduleName = project.name
-// 获取根项目名
-//    def projectName =rootProject.name
-//  文件夹名
-    def projectName = rootProject.projectDir.name//def projectName =rootProject.rootDir.name
-//    def moduleName = projectDir.name
-    def gitRepo = "github.com/1976222027"
-    def groupName = "io.github.1976222027.$projectName"
+    //  获取项目名
+    def projectName = rootProject.name  //分享git是取的项目名
+    def projectDirName = rootProject.projectDir.name//def projectName =rootProject.rootDir.name//项目文件夹名
+
+    def gitRepo = "github.com/mahongyin"
     def versionName = "0.0.2"
+    def groupName = "io.github.mahongyin.$projectDirName" //自行分辨 用项目名还是目录名
+
+    //  获取当前模块名
+    def moduleName = project.name
+    def moduleDirName = projectDir.name
 
     coordinates(groupName, moduleName, versionName)
 
@@ -77,7 +78,7 @@ mavenPublishing {
 // 自动发布
 //../gradlew publishAndReleaseToMavenCentral
 // https://repo1.maven.org/maven2/io/github/1976222027/
-tasks.register("uploadToMavenCentral"){
+tasks.register("uploadMavenCentral"){
     group = "publishing"
     description = "Uploads all archives to the remote Maven repository."
     exec {
@@ -90,7 +91,7 @@ tasks.register("uploadToMavenCentral"){
     }
 }
 
-tasks.register("uploadAutoPublishMavenCentral"){
+tasks.register("uploadAutoMavenCentral"){
     group = "publishing"
     description = "Uploads all archives to the remote Maven repository."
     exec {

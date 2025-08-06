@@ -34,7 +34,7 @@ abstract class PCService {
     @Get("saveFile")
     fun saveFile(@UpFile file: String, @UpFile file2: String, name: String, type: String): String {
         //Log.d("form-data", file.toString() + name + type)
-        return file + "#"+file2;
+        return file;
     }
 
     @Get("queryAppInfo")

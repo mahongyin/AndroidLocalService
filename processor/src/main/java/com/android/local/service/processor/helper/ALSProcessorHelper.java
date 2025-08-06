@@ -275,7 +275,7 @@ public class ALSProcessorHelper {
             builder.addStatement("return realService.successEmpty()");
         } else {
             String paramAll = stringBuffer.toString();
-            // 这里是没有@UpFile注解的情况，如果有这里方法参数有@#@不用关心。因为不会走这里，没有@UpFile就不会有@#@
+            // 这里是没有@UpFile注解的情况
             builder.addStatement("$T result = $N$N", element.getReturnType(), methodName, paramAll);
             builder.addStatement("return realService.success(result)");
         }

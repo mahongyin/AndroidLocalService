@@ -59,10 +59,10 @@ class MainActivity : AppCompatActivity() {
             ipAddress = getPhoneWifiIpAddress()
         }
         pcServicePort =
-            ALSHelper.serviceList.find { it.serviceName == PCService::class.java.simpleName }?.port
+            ALSHelper.getServiceList().find { it.serviceName == PCService::class.java.simpleName }?.port
                 ?: 0
         androidServicePort =
-            ALSHelper.serviceList.find { it.serviceName == AndroidService::class.java.simpleName }?.port
+            ALSHelper.getServiceList().find { it.serviceName == AndroidService::class.java.simpleName }?.port
                 ?: 0
     }
 
@@ -84,7 +84,7 @@ class MainActivity : AppCompatActivity() {
         binding.tvServiceAddress.text = "本机服务器地址：$ipAddress"
 
         var serviceListData = ""
-        ALSHelper.serviceList.forEach { serviceListData += "服务名：${it.serviceName}   端口号：${it.port}\n" }
+        ALSHelper.getServiceList().forEach { serviceListData += "服务名：${it.serviceName}   端口号：${it.port}\n" }
         binding.tvServiceList.text = serviceListData
 
 
