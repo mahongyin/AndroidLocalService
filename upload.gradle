@@ -1,4 +1,5 @@
 apply plugin: 'com.vanniktech.maven.publish'
+//apply plugin: "signing" // add
 
 //allprojects {
 //    plugins.withId("com.vanniktech.maven.publish") {
@@ -37,16 +38,18 @@ mavenPublishing {
     def projectDirName = rootProject.projectDir.name//def projectName =rootProject.rootDir.name//项目文件夹名
 
     def gitRepo = "github.com/mahongyin"
-    def versionName = "0.0.3"
+    def versionName = "0.0.4"
     def groupName = "io.github.mahongyin.$projectDirName" //自行分辨 用项目名还是目录名
 
     //  获取当前模块名
     def moduleName = project.name
     def moduleDirName = projectDir.name
 
+    // 配置坐标,参数一要和命名空间一致，参二为模块名(GroupId),参三为版本号 "1.0.0"
     coordinates(groupName, moduleName, versionName)
 
     pom {
+        // 模块名
         name = moduleName
         description = "A description of what ${projectName} does."
         inceptionYear = "2025"
@@ -56,6 +59,9 @@ mavenPublishing {
                 name = "The Apache License, Version 2.0"
                 url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
                 distribution = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+//                name = "LGPL-3.0 license"
+//                url = "https://www.gnu.org/licenses/lgpl-3.0.html"
+//                distribution = "https://www.gnu.org/licenses/lgpl-3.0.html"
             }
         }
         developers {
@@ -72,6 +78,11 @@ mavenPublishing {
             developerConnection = "scm:git:ssh://git@${gitRepo}/${projectName}.git"
         }
     }
+
+    // 发布到 Sonatype, 参数为 sonatype host,还可以是 SonatypeHost.DEFAULT,SonatypeHost.S0
+//    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL) // add
+//    //signing 进行签名
+//    signAllPublications() // add
 }
 
 //../gradlew publishToMavenCentral
