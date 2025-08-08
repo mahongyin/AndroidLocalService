@@ -94,7 +94,8 @@ tasks.register("uploadMavenCentral"){
     description = "Uploads all archives to the remote Maven repository."
     exec {
         commandLine "../gradlew.bat", "publishToMavenCentral"
-        //commandLine "../gradlew publishAndReleaseToMavenCentral"
+        //commandLine "../gradlew", "publishToMavenCentral"
+
         workingDir projectDir
         errorOutput = System.err
         standardOutput = System.out
@@ -106,8 +107,8 @@ tasks.register("uploadAutoMavenCentral"){
     group = "publishing"
     description = "Uploads all archives to the remote Maven repository."
     exec {
-        commandLine "../gradlew.bat", "publishToMavenCentral"
-        //commandLine "../gradlew publishAndReleaseToMavenCentral"
+        commandLine "../gradlew.bat", "publishAndReleaseToMavenCentral"
+        //commandLine "../gradlew", "publishAndReleaseToMavenCentral"
         workingDir projectDir
         errorOutput = System.err
         standardOutput = System.out
