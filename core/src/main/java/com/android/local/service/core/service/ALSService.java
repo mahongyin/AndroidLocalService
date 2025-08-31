@@ -56,6 +56,12 @@ public class ALSService extends NanoHTTPD {
         String uri = session.getUri();
         Map<String, String> params = session.getParms();
 
+//        session.getParameters();
+//        session.getCookies();
+//        session.getInputStream();
+//        session.getRemoteIpAddress();
+//        session.getQueryParameterString();
+
         String contentType = "text/plain";
         if (session.getHeaders().containsKey("content-type")) {
             String tmpType = session.getHeaders().get("content-type");
@@ -97,7 +103,9 @@ public class ALSService extends NanoHTTPD {
 
         Response response;
         if (requestListener != null) {
-            response = requestListener.onRequest(contentType, action, params != null ? params : new HashMap<>());
+            Map<String, String> headerMap = session.getHeaders();
+            Map<String, String> bodyMap = params != null ? params : new HashMap<>();
+            response = requestListener.onRequest(contentType, action, headerMap, bodyMap);
         } else {
             throw new RuntimeException("setRequestListener 方法没有设置");
         }
@@ -240,6 +248,7 @@ public class ALSService extends NanoHTTPD {
         }
         if (response != null){
         response.addHeader("Access-Control-Allow-Headers", allowHeaders);
+        //[OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, PATCH]
         response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, HEAD");
         response.addHeader("Access-Control-Allow-Credentials", "true");
         response.addHeader("Access-Control-Allow-Origin", "*");

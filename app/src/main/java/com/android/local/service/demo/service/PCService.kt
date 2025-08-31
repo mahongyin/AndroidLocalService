@@ -3,6 +3,7 @@ package com.android.local.service.demo.service
 import com.android.local.service.BuildConfig
 import com.android.local.service.annotation.Request
 import com.android.local.service.annotation.Page
+import com.android.local.service.annotation.RequestHeader
 import com.android.local.service.annotation.ServicePort
 import com.android.local.service.annotation.UpFile
 import com.android.local.service.annotation.UpJson
@@ -17,8 +18,8 @@ abstract class PCService {
     fun getIndexFileName() = "test_page.html"
 
     @Request("saveXml")
-    fun saveXml(@UpXml xmlStr: String): String {
-        return xmlStr;
+    fun saveXml(@RequestHeader() header: Map<String, String>, @UpXml xml2: String): String {
+        return xml2;
     }
     @Request("saveData")
     fun saveData(content: String): String {
@@ -30,9 +31,9 @@ abstract class PCService {
      *  json = { "key1": "value", "key2":{}, "key3":[], "key4":111 }
      */
     @Request("saveJson")
-    fun saveJson(@UpJson json: String, name: String): String {
-        LiveDataHelper.saveDataLiveData.postValue(json);
-        return json;
+    fun saveJson(@UpJson json2: String, name: String): String {
+        LiveDataHelper.saveDataLiveData.postValue(json2);
+        return json2;
     }
 
     // 上传文件不用给文件留字段

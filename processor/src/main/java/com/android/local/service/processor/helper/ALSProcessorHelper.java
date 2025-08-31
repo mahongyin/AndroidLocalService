@@ -1,7 +1,8 @@
 package com.android.local.service.processor.helper;
 
-import com.android.local.service.annotation.Request;
 import com.android.local.service.annotation.Page;
+import com.android.local.service.annotation.Request;
+import com.android.local.service.annotation.RequestHeader;
 import com.android.local.service.annotation.ServicePort;
 import com.android.local.service.annotation.UpJson;
 import com.android.local.service.annotation.UpXml;
@@ -40,7 +41,7 @@ public class ALSProcessorHelper {
     private static final String AFTER_PARAM_NAME = "contentType";
     private static final String FIRST_PARAM_NAME = "action";
     private static final String SECOND_PARAM_NAME = "paramsMap";
-
+    private static final String REQUEST_HEADER_NAME = "headersMap";
     private static final String METHOD_NAME = "handleRequest";
     private static final String METHOD_RETURN_TYPE = "Response";
     private static final String METHOD_RETURN_TYPE_PACKAGE_NAME = "org.nanohttpd.protocols.http.response";
@@ -117,11 +118,12 @@ public class ALSProcessorHelper {
                 .addMethod(MethodSpec.methodBuilder(REQUEST_LISTENER_METHOD_NAME)
                         .addModifiers(Modifier.PUBLIC)
                         .addAnnotation(Override.class)
-                        .addParameter(String.class, AFTER_PARAM_NAME)
                         .addParameter(String.class, FIRST_PARAM_NAME)
+                        .addParameter(String.class, AFTER_PARAM_NAME)
+                        .addParameter(Map.class, REQUEST_HEADER_NAME)
                         .addParameter(Map.class, SECOND_PARAM_NAME)
                         /*.addStatement("return $N($N, $N)", METHOD_NAME, FIRST_PARAM_NAME, SECOND_PARAM_NAME)*/
-                        .addStatement("return $N($N, $N, $N)", METHOD_NAME, AFTER_PARAM_NAME, FIRST_PARAM_NAME, SECOND_PARAM_NAME)
+                        .addStatement("return $N($N, $N, $N, $N)", METHOD_NAME, FIRST_PARAM_NAME, AFTER_PARAM_NAME, REQUEST_HEADER_NAME, SECOND_PARAM_NAME)
                         .returns(ClassName.get(METHOD_RETURN_TYPE_PACKAGE_NAME, METHOD_RETURN_TYPE))
                         .build())
                 .build();
@@ -160,7 +162,8 @@ public class ALSProcessorHelper {
     /**
      * 创建下边的方法
      * <p>
-     * public Response handleRequest(String action, Map paramsMap) {
+     * //public Response handleRequest(String action, Map paramsMap) {
+     * public Response handleRequest(String action, String contentType, Map<String, String> headersMap, Map<String, String> paramsMap) {
      * Map<String, String> tempParamsMap = paramsMap;
      * }
      */
@@ -171,8 +174,9 @@ public class ALSProcessorHelper {
         builder = MethodSpec.methodBuilder(METHOD_NAME)
                 .addModifiers(Modifier.PUBLIC)
                 .returns(ClassName.get(METHOD_RETURN_TYPE_PACKAGE_NAME, METHOD_RETURN_TYPE))
-                .addParameter(String.class, AFTER_PARAM_NAME)
                 .addParameter(String.class, FIRST_PARAM_NAME)
+                .addParameter(String.class, AFTER_PARAM_NAME)
+                .addParameter(ParameterizedTypeName.get(Map.class, String.class, String.class), REQUEST_HEADER_NAME)
                 .addParameter(ParameterizedTypeName.get(Map.class, String.class, String.class), SECOND_PARAM_NAME);
 
         methodSpecBuilderCache.put(key, builder);
@@ -237,36 +241,41 @@ public class ALSProcessorHelper {
         int index = 0;
         // 取到方法内的参数
         List<? extends VariableElement> params = element.getParameters();
+
         if (!params.isEmpty()) {
             for (VariableElement variableElement : params) {
                 String paramKey = variableElement.getSimpleName().toString();
                 TypeMirror paramType = variableElement.asType();
                 log("《Get注解》Param参数 key = " + paramKey + "-----paramType = " + paramType);
-                builder.addStatement("String $N = $N.get($S)", paramKey, SECOND_PARAM_NAME, paramKey);
 
-                UpJson jsonAnnotation = variableElement.getAnnotation(UpJson.class);
-                if (jsonAnnotation != null && variableElement.getKind() == ElementKind.PARAMETER) {
-                    // 找到被@UpJson注解的参数 //参数名 paramKey
-                    builder.beginControlFlow("if (contentType.contains($S))", APPLICATION_JSON)
-                            .addStatement("$N = $N.get($S)", paramKey, SECOND_PARAM_NAME, paramKey)
-                            .endControlFlow();
+                RequestHeader headerAnnotation = variableElement.getAnnotation(RequestHeader.class);
+                if (headerAnnotation != null && variableElement.getKind() == ElementKind.PARAMETER) {
+                    builder.addStatement("$T $N = $N", paramType, paramKey, REQUEST_HEADER_NAME);
+                } else {
+                    builder.addStatement("String $N = $N.get($S)", paramKey, SECOND_PARAM_NAME, paramKey);
+
+                    UpJson jsonAnnotation = variableElement.getAnnotation(UpJson.class);
+                    if (jsonAnnotation != null && variableElement.getKind() == ElementKind.PARAMETER) {
+                        // 找到被@UpJson注解的参数 //参数名 paramKey
+                        builder.beginControlFlow("if (contentType.contains($S))", APPLICATION_JSON)
+                                .addStatement("$N = $N.get($S)", paramKey, SECOND_PARAM_NAME, "json")
+                                .endControlFlow();
 //                if (contentType.eques(APPLICATION_JSON)) {
 //                    $N = paramKey.get("json");
 //                }
-                }
-                UpXml xmlAnnotation = variableElement.getAnnotation(UpXml.class);
-                if (xmlAnnotation != null && variableElement.getKind() == ElementKind.PARAMETER) {
-                    // 找到被@UpXml注解的参数 //参数名 paramKey
-                    builder.beginControlFlow("if (contentType.contains($S))", APPLICATION_XML)
-                            .addStatement("$N = $N.get($S)", paramKey, SECOND_PARAM_NAME, paramKey)
+                    }
+                    UpXml xmlAnnotation = variableElement.getAnnotation(UpXml.class);
+                    if (xmlAnnotation != null && variableElement.getKind() == ElementKind.PARAMETER) {
+                        // 找到被@UpXml注解的参数 //参数名 paramKey
+                        builder.beginControlFlow("if (contentType.contains($S))", APPLICATION_XML)
+                                .addStatement("$N = $N.get($S)", paramKey, SECOND_PARAM_NAME, "xml")
+                                .endControlFlow();
+                    }
+
+                    builder.beginControlFlow("if ($N == null)", paramKey)
+                            .addStatement("$N = $S", paramKey, ALSUtils.getDefaultValueByParamTypeWhenNull(paramKey, paramType))
                             .endControlFlow();
                 }
-
-                builder.beginControlFlow("if ($N == null)", paramKey)
-                        .addStatement("$N = $S", paramKey, ALSUtils.getDefaultValueByParamTypeWhenNull(paramKey, paramType))
-                        .endControlFlow();
-
-
                 String realValue = ALSUtils.getParamStatementByParamType(paramKey, paramType);
 
                 if (index > 0) {

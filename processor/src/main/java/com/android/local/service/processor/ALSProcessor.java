@@ -2,6 +2,7 @@ package com.android.local.service.processor;
 
 import com.android.local.service.annotation.Request;
 import com.android.local.service.annotation.Page;
+import com.android.local.service.annotation.RequestHeader;
 import com.android.local.service.annotation.ServicePort;
 import com.android.local.service.annotation.UpFile;
 import com.android.local.service.annotation.UpJson;
@@ -9,7 +10,9 @@ import com.android.local.service.annotation.UpXml;
 import com.android.local.service.processor.helper.ALSProcessorHelper;
 import com.squareup.javapoet.TypeName;
 
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -47,6 +50,7 @@ public class ALSProcessor extends AbstractProcessor {
         annotationTypes.add(UpFile.class.getCanonicalName());
         annotationTypes.add(UpJson.class.getCanonicalName());
         annotationTypes.add(UpXml.class.getCanonicalName());
+        annotationTypes.add(RequestHeader.class.getCanonicalName());
         return annotationTypes;
     }
 
@@ -92,6 +96,13 @@ public class ALSProcessor extends AbstractProcessor {
                             String type = element.asType().toString();
                             if (!type.equals(TypeName.get(String.class).toString())) {
                                 throw new IllegalArgumentException(xmlAnnotation.message());
+                            }
+                        }
+                        RequestHeader headerAnnotation = element.getAnnotation(RequestHeader.class);
+                        if (headerAnnotation != null) {
+                            String type = element.asType().toString();
+                            if (!type.equals("java.util.Map<java.lang.String,java.lang.String>")) {
+                                throw new IllegalArgumentException(headerAnnotation.message());
                             }
                         }
                     }

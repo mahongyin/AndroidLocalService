@@ -13,7 +13,8 @@ public class ServiceConfig {
     public ServiceConfig(Class<?> serviceClass) {
         this.serviceClass = serviceClass;
     }
-   public ServiceConfig(Class<?> serviceClass, int port) {
+
+    public ServiceConfig(Class<?> serviceClass, int port) {
         this.serviceClass = serviceClass;
         this.port = port;
     }
@@ -42,15 +43,15 @@ public class ServiceConfig {
                 '}';
     }
 
-   public ServiceInfo toServiceInfo(){
-       Class<?> serviceClass = this.serviceClass;
-       String serviceName = serviceClass.getSimpleName();
-       String createServiceName = "ALS_"+serviceName;
-       String fullClassName = serviceClass.getName();
-       if (fullClassName == null){
-           fullClassName = "";
-       }
-       String packageName = fullClassName.substring(0, fullClassName.toString().lastIndexOf("."));
-       return new ServiceInfo(serviceName, this.port, createServiceName, packageName);
-   }
+    public ServiceInfo toServiceInfo() {
+        Class<?> serviceClass = this.serviceClass;
+        String serviceName = serviceClass.getSimpleName();
+        String createServiceName = "ALS_" + serviceName;
+        String fullClassName = serviceClass.getName();
+        if (fullClassName == null) {
+            fullClassName = "";
+        }
+        String packageName = fullClassName.substring(0, fullClassName.toString().lastIndexOf("."));
+        return new ServiceInfo(serviceName, this.port, createServiceName, packageName);
+    }
 }

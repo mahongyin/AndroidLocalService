@@ -8,20 +8,24 @@ public class ALSUtils {
 
     public static String getParamStatementByParamType(String paramKey, TypeMirror paramType) {
         String type = paramType.toString().toLowerCase(Locale.ROOT);
-        if (type.contains("int")) {
-            return "Integer.valueOf(" + paramKey + ")";
-        } else if (type.contains("boolean")) {
-            return "Boolean.valueOf(" + paramKey + ")";
-        } else if (type.contains("string")) {
-            return "String.valueOf(" + paramKey + ")";
-        } else if (type.contains("long")) {
-            return "Long.valueOf(" + paramKey + ")";
-        } else if (type.contains("float")) {
-            return "Float.valueOf(" + paramKey + ")";
-        } else if (type.contains("double")) {
-            return "Double.valueOf(" + paramKey + ")";
-        } else {
+        if (type.contains("<") && type.contains(">")) {  //排除List<> Map<> Set<> Queue<> ....
             return paramKey;
+        } else {
+            if (type.contains("int")) {
+                return "Integer.valueOf(" + paramKey + ")";
+            } else if (type.contains("boolean")) {
+                return "Boolean.valueOf(" + paramKey + ")";
+            } else if (type.contains("string")) {
+                return "String.valueOf(" + paramKey + ")";
+            } else if (type.contains("long")) {
+                return "Long.valueOf(" + paramKey + ")";
+            } else if (type.contains("float")) {
+                return "Float.valueOf(" + paramKey + ")";
+            } else if (type.contains("double")) {
+                return "Double.valueOf(" + paramKey + ")";
+            } else {
+                return paramKey;
+            }
         }
     }
 
