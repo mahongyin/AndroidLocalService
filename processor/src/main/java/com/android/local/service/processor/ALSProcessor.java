@@ -40,10 +40,13 @@ public class ALSProcessor extends AbstractProcessor {
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         Set<String> annotationTypes = new LinkedHashSet<>();
+        // 添加支持的注解类型
         annotationTypes.add(Request.class.getCanonicalName());
         annotationTypes.add(Page.class.getCanonicalName());
         annotationTypes.add(ServicePort.class.getCanonicalName());
         annotationTypes.add(UpFile.class.getCanonicalName());
+        annotationTypes.add(UpJson.class.getCanonicalName());
+        annotationTypes.add(UpXml.class.getCanonicalName());
         return annotationTypes;
     }
 

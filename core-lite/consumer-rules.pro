@@ -5,12 +5,6 @@
 
 -keep class org.nanohttpd.** { *; }
 
--keep class org.apache.commons.** { *; }
-
--keep class javax.servlet.** { *; }
--keep interface javax.servlet.** { *; }
--dontwarn javax.servlet.**
-
 -dontwarn javax.portlet.ActionRequest
 -dontwarn org.openjsse.**
 -dontwarn org.bouncycastle.**

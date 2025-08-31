@@ -52,10 +52,12 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.9.3")
 
 //    implementation project(":annotation")
-    implementation project(":core")
+//    implementation project(":core")
+    implementation project(":core-lite")
     kapt project(":processor")
 
-//    implementation 'io.github.mahongyin.android-local-service:annotation:0.0.5'
-//    implementation 'io.github.mahongyin.android-local-service:core:0.0.5'
-//    kapt 'io.github.mahongyin.android-local-service:processor:0.0.5'
+//    implementation "io.github.mahongyin.android-local-service:annotation:${VERSION_NAME}"
+//    implementation "io.github.mahongyin.android-local-service:core:${VERSION_NAME}"
+//    implementation "io.github.mahongyin.android-local-service:core-lite:${VERSION_NAME}"
+//    kapt "io.github.mahongyin.android-local-service:processor:${VERSION_NAME}"
 }

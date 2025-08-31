@@ -29,11 +29,6 @@ android {
 dependencies {
     api project(":annotation") //加上它，使用端是不是不用再引入了
     api files('libs/nanohttpd-2.3.5-SNAPSHOT.jar')
-
-    //上传文件用的
-    api 'commons-fileupload:commons-fileupload:1.6.0'
-    //implementation 'commons-io:commons-io:2.20.0' // 上面包含了
-    compileOnly 'javax.servlet:javax.servlet-api:4.0.1'
 }
 
 apply from: '../upload.gradle'

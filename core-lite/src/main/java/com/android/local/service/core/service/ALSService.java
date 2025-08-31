@@ -6,10 +6,6 @@ import android.util.Log;
 import com.android.local.service.core.ALSHelper;
 import com.android.local.service.core.i.RequestListener;
 
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileUpload;
-import org.apache.commons.fileupload.RequestContext;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -34,15 +30,9 @@ public class ALSService extends NanoHTTPD {
     private static final String TAG = ALSService.class.getSimpleName();
 
     private RequestListener requestListener;
-    private FileUpload upload;
 
     public ALSService(int port) {
         super(port);
-    }
-
-    private void initUpFile() {
-        DiskFileItemFactory factory = new DiskFileItemFactory();
-        upload = new FileUpload(factory);
     }
 
     public void setRequestListener(RequestListener listener) {
@@ -128,100 +118,15 @@ public class ALSService extends NanoHTTPD {
     }
 
     private Map<String, String> handleMultipartData(IHTTPSession session) {
-        Map<String, String> result = new HashMap<>();
-        Map<String, List<Map<String, Object>>> filesInfo = new HashMap<>();
-        Map<String, String> formFields = new HashMap<>();
-
         try {
-            RequestContext request = new RequestContext() {
-                @Override
-                public String getCharacterEncoding() {
-                    String contentTypeHeader = session.getHeaders().get("content-type");
-                    if (contentTypeHeader != null && contentTypeHeader.contains(";")) {
-                        String[] parts = contentTypeHeader.trim().split(";");
-                        if (parts.length > 1 && parts[1].contains("=")) {
-                            return parts[1].split("=")[1];
-                        }
-                    }
-                    return "UTF-8";
-                }
-
-                @Override
-                public String getContentType() {
-                    return session.getHeaders().get("content-type") != null ?
-                            session.getHeaders().get("content-type") : "text/plain";
-                }
-
-                @Override
-                public int getContentLength() {
-                    String contentLength = session.getHeaders().get("content-length");
-                    return contentLength != null ? Integer.parseInt(contentLength) : 0;
-                }
-
-                @Override
-                public InputStream getInputStream() throws IOException {
-                    return session.getInputStream();
-                }
-            };
-
-            if (upload == null) {
-                initUpFile();
-            }
-
-            List<FileItem> items = upload.parseRequest(request);
-            List<Map<String, Object>> listFile = new ArrayList<>();
-
-            for (FileItem item : items) {
-                if (item.isFormField()) {
-                    String value = item.getString("UTF-8");
-                    formFields.put(item.getFieldName(), value);
-                } else {
-                    String fileName = item.getName();
-                    String fieldName = item.getFieldName();
-                    String contentTypeItem = item.getContentType();
-                    long fileSize = item.getSize();
-
-                    File cacheDir = ALSHelper.getCacheDir();
-                    File uploadDir = new File(cacheDir, "uploads");
-                    if (!uploadDir.exists()) {
-                        uploadDir.mkdirs();
-                    }
-
-                    File uploadedFile = new File(uploadDir,
-                            fileName != null ? fileName : "upload_" + System.currentTimeMillis());
-                    item.write(uploadedFile);
-
-                    Map<String, Object> fileInfo = new HashMap<>();
-                    fileInfo.put("path", uploadedFile.getAbsolutePath());
-                    fileInfo.put("filename", fileName != null ? fileName : "");
-                    fileInfo.put("content_type", contentTypeItem != null ? contentTypeItem : "");
-                    fileInfo.put("size", fileSize);
-                    fileInfo.put("field_name", fieldName);
-
-                    listFile.add(fileInfo);
-                }
-            }
-
-            result.putAll(formFields);
-
-            for (Map<String, Object> file : listFile) {
-                String fieldName = (String) file.get("field_name");
-                if (filesInfo.containsKey(fieldName) && filesInfo.get(fieldName) != null) {
-                    filesInfo.get(fieldName).add(file);
-                } else {
-                    List<Map<String, Object>> newList = new ArrayList<>();
-                    newList.add(file);
-                    filesInfo.put(fieldName, newList);
-                }
-            }
-            for (Map.Entry<String, List<Map<String, Object>>> entry : filesInfo.entrySet()) {
-                result.put(entry.getKey(), listToJSONArray(entry.getValue()).toString());
-            }
+            Map<String, String> body = new HashMap<>();
+            session.parseBody(body);
+            return session.getParms();
         } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(TAG, "Error handling multipart data: " + e.getMessage());
+            Map<String, String> result = new HashMap<>();
+            Log.e(TAG, "lib 'core-lite' is not support upload files, Please use lib 'core'");
+            return result;
         }
-        return result;
     }
 
     private Response wrapResponse(IHTTPSession session, Response response) {
