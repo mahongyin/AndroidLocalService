@@ -58,7 +58,10 @@ public class ALSService extends NanoHTTPD {
 
         String contentType = "text/plain";
         if (session.getHeaders().containsKey("content-type")) {
-            contentType = session.getHeaders().get("content-type").toLowerCase(Locale.getDefault());
+            String tmpType = session.getHeaders().get("content-type");
+            if (tmpType != null) {
+                contentType = tmpType.toLowerCase(Locale.getDefault());
+            }
         }
         // 接收请求类型
         if (Method.POST.equals(method)) {
@@ -96,7 +99,7 @@ public class ALSService extends NanoHTTPD {
         if (requestListener != null) {
             response = requestListener.onRequest(contentType, action, params != null ? params : new HashMap<>());
         } else {
-            throw new RuntimeException("setRequestListener方法没有设置");
+            throw new RuntimeException("setRequestListener 方法没有设置");
         }
 
         return wrapResponse(session, response);
@@ -119,7 +122,10 @@ public class ALSService extends NanoHTTPD {
         }
         byte[] buffer = new byte[contentLength];
         try {
-            session.getInputStream().read(buffer, 0, contentLength);
+            int r = session.getInputStream().read(buffer, 0, contentLength);
+            if (r <= 0) {
+                return "";
+            }
             return new String(buffer, "UTF-8");
         } catch (Exception e) {
             e.printStackTrace();
@@ -232,12 +238,13 @@ public class ALSService extends NanoHTTPD {
                 allowHeaders = requestHeaders;
             }
         }
-
+        if (response != null){
         response.addHeader("Access-Control-Allow-Headers", allowHeaders);
         response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, HEAD");
         response.addHeader("Access-Control-Allow-Credentials", "true");
         response.addHeader("Access-Control-Allow-Origin", "*");
         response.addHeader("Access-Control-Max-Age", String.valueOf(42 * 60 * 60));
+        }
         return response;
     }
 
