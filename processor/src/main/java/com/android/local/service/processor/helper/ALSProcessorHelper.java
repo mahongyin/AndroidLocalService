@@ -1,9 +1,10 @@
 package com.android.local.service.processor.helper;
 
-import com.android.local.service.annotation.Get;
+import com.android.local.service.annotation.Request;
 import com.android.local.service.annotation.Page;
-import com.android.local.service.annotation.Service;
+import com.android.local.service.annotation.ServicePort;
 import com.android.local.service.annotation.UpJson;
+import com.android.local.service.annotation.UpXml;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
@@ -33,6 +34,7 @@ public class ALSProcessorHelper {
     private static final String AUTO_CREATE_CLASS_PREFIX = "ALS_";
 
     private static final String APPLICATION_JSON = "application/json";
+    private static final String APPLICATION_XML = "application/xml";
     private static final String MULTIPART_FORM_DATA = "multipart/form-data";
 
     private static final String AFTER_PARAM_NAME = "contentType";
@@ -76,8 +78,8 @@ public class ALSProcessorHelper {
             String className = AUTO_CREATE_CLASS_PREFIX + simpleName;
             String name = key.toString();
             String packageName = name.substring(0, name.lastIndexOf("."));
-            Service service = typeElement.getAnnotation(Service.class);
-            int port = service.port();
+            ServicePort servicePort = typeElement.getAnnotation(ServicePort.class);
+            int port = servicePort.port();
             builder = TypeSpec.classBuilder(className)
                     .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                     .superclass(ClassName.get(packageName, simpleName))
@@ -216,13 +218,13 @@ public class ALSProcessorHelper {
         builder.endControlFlow();
     }
 
-    public void processGet(ExecutableElement element) {
+    public void processRequest(ExecutableElement element) {
         TypeElement typeElement = (TypeElement) element.getEnclosingElement();
         createTypeSpecBuilder(typeElement);
         MethodSpec.Builder builder = createOrGetMethodSpecBuilder(typeElement);
         String methodName = element.getSimpleName().toString();
-        Get get = element.getAnnotation(Get.class);
-        String value = get.value();
+        Request request = element.getAnnotation(Request.class);
+        String value = request.value();
         builder.beginControlFlow("if (action.equals($S))", value);
 
         log("《Get注解》修饰的方法名：" + methodName);
@@ -245,13 +247,19 @@ public class ALSProcessorHelper {
                 UpJson jsonAnnotation = variableElement.getAnnotation(UpJson.class);
                 if (jsonAnnotation != null && variableElement.getKind() == ElementKind.PARAMETER) {
                     // 找到被@UpJson注解的参数 //参数名 paramKey
-                    //String jsonKey = "json";
                     builder.beginControlFlow("if (contentType.contains($S))", APPLICATION_JSON)
                             .addStatement("$N = $N.get($S)", paramKey, SECOND_PARAM_NAME, paramKey)
                             .endControlFlow();
 //                if (contentType.eques(APPLICATION_JSON)) {
 //                    $N = paramKey.get("json");
 //                }
+                }
+                UpXml xmlAnnotation = variableElement.getAnnotation(UpXml.class);
+                if (xmlAnnotation != null && variableElement.getKind() == ElementKind.PARAMETER) {
+                    // 找到被@UpXml注解的参数 //参数名 paramKey
+                    builder.beginControlFlow("if (contentType.contains($S))", APPLICATION_XML)
+                            .addStatement("$N = $N.get($S)", paramKey, SECOND_PARAM_NAME, paramKey)
+                            .endControlFlow();
                 }
 
                 builder.beginControlFlow("if ($N == null)", paramKey)

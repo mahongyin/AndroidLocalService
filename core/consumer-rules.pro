@@ -4,10 +4,13 @@
 -keep @com.android.local.service.annotation.* class *
 
 -keep class javax.servlet.** { *; }
--keep class org.apache.commons.** { *; }
--keep class org.nanohttpd.** { *; }
-
+-keep interface javax.servlet.** { *; }
+-dontwarn javax.servlet.**
 -dontwarn javax.portlet.ActionRequest
 -dontwarn org.openjsse.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.conscrypt.**
+
+-keep class org.apache.commons.** { *; }
+-keep class org.nanohttpd.** { *; }
+

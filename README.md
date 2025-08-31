@@ -6,9 +6,9 @@
 1. 添加依赖
 
 ```groovy
-    implementation 'io.github.mahongyin.android-local-service:core:0.0.3'
-    implementation 'io.github.mahongyin.android-local-service:annotation:0.0.3'
-    kapt 'io.github.mahongyin.android-local-service:processor:0.0.3'
+    implementation 'io.github.mahongyin.android-local-service:core:0.0.5'
+    implementation 'io.github.mahongyin.android-local-service:annotation:0.0.5'
+    kapt 'io.github.mahongyin.android-local-service:processor:0.0.5'
 ```
 
 2. 创建本地服务（具体效果可以看项目demo） 定义如下类

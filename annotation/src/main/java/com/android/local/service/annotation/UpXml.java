@@ -6,10 +6,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 标明参数(String)是json的字段
+ * 标明参数(String)是xml的字段
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.PARAMETER)
-public @interface UpJson {
-    String message() default "@使用UpJson注解的参数类型必须为String";
+public @interface UpXml {
+    String message() default "@使用UpXml注解的参数类型必须为String";
 }

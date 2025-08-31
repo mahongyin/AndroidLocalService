@@ -2,6 +2,7 @@ package com.android.local.service.core.service;
 
 import android.content.res.AssetManager;
 import android.util.Log;
+
 import com.android.local.service.core.ALSHelper;
 import com.android.local.service.core.i.RequestListener;
 
@@ -21,6 +22,7 @@ import org.nanohttpd.protocols.http.response.Status;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -59,19 +61,24 @@ public class ALSService extends NanoHTTPD {
         if (session.getHeaders().containsKey("content-type")) {
             contentType = session.getHeaders().get("content-type").toLowerCase(Locale.getDefault());
         }
-
+        // 接收请求类型
         if (Method.POST.equals(method)) {
             try {
                 if (contentType.contains("multipart/form-data")) {
                     params = handleMultipartData(session);
-                } else if (contentType.contains("application/json")) {
+                } else if (contentType.contains("application/json")) {//请求体中的数据是 JSON 格式
                     String body = getRequestBody(session);
                     Log.d("JSON Body", body);
                     params = new HashMap<>();
                     params.put("json", body);
+                } else if (contentType.contains("application/xml")) {//请求体中的数据是 XML 格式
+                    String body = getRequestBody(session);
+                    Log.d("XML Body", body);
+                    params = new HashMap<>();
+                    params.put("xml", body);
                 } else {
-                    Map<String, String> files = new HashMap<>();
-                    session.parseBody(files);
+                    Map<String, String> body = new HashMap<>();
+                    session.parseBody(body);
                     params = session.getParms();
                 }
             } catch (Exception e) {
@@ -97,13 +104,25 @@ public class ALSService extends NanoHTTPD {
     }
 
     private String getRequestBody(IHTTPSession session) {
-        int contentLength = session.getHeaders().containsKey("content-length") ?
-                Integer.parseInt(session.getHeaders().get("content-length")) : 0;
+        int contentLength = 0;
+        try {
+            if (session.getHeaders().containsKey("content-length")) {
+                String contentLengthStr = session.getHeaders().get("content-length");
+                if (contentLengthStr != null) {
+                    contentLength = Integer.parseInt(contentLengthStr);
+                }
+            }
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+        }
+        if (contentLength <= 0) {
+            return "";
+        }
         byte[] buffer = new byte[contentLength];
         try {
             session.getInputStream().read(buffer, 0, contentLength);
             return new String(buffer, "UTF-8");
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return "";
         }
@@ -163,9 +182,7 @@ public class ALSService extends NanoHTTPD {
                     String contentTypeItem = item.getContentType();
                     long fileSize = item.getSize();
 
-                    android.content.Context context = ALSHelper.getContext();
-                    File cacheDir = context.getExternalCacheDir() != null ?
-                            context.getExternalCacheDir() : context.getCacheDir();
+                    File cacheDir = ALSHelper.getCacheDir();
                     File uploadDir = new File(cacheDir, "uploads");
                     if (!uploadDir.exists()) {
                         uploadDir.mkdirs();
@@ -244,11 +261,10 @@ public class ALSService extends NanoHTTPD {
     }
 
     private Response fileResponse(String fileName) {
-        android.content.Context context = ALSHelper.getContext();
-        if (context == null) {
+        AssetManager assetManager = ALSHelper.getAssetManager();
+        if (assetManager == null) {
             return fileNotFoundResponse();
         }
-        AssetManager assetManager = context.getAssets();
         try {
             InputStream stream = assetManager.open(fileName);
             String extension = getFileExtensionName(fileName);

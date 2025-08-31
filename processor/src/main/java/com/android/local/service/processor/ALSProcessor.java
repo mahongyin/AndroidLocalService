@@ -1,10 +1,11 @@
 package com.android.local.service.processor;
 
-import com.android.local.service.annotation.Get;
+import com.android.local.service.annotation.Request;
 import com.android.local.service.annotation.Page;
-import com.android.local.service.annotation.Service;
+import com.android.local.service.annotation.ServicePort;
 import com.android.local.service.annotation.UpFile;
 import com.android.local.service.annotation.UpJson;
+import com.android.local.service.annotation.UpXml;
 import com.android.local.service.processor.helper.ALSProcessorHelper;
 import com.squareup.javapoet.TypeName;
 
@@ -39,9 +40,9 @@ public class ALSProcessor extends AbstractProcessor {
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         Set<String> annotationTypes = new LinkedHashSet<>();
-        annotationTypes.add(Get.class.getCanonicalName());
+        annotationTypes.add(Request.class.getCanonicalName());
         annotationTypes.add(Page.class.getCanonicalName());
-        annotationTypes.add(Service.class.getCanonicalName());
+        annotationTypes.add(ServicePort.class.getCanonicalName());
         annotationTypes.add(UpFile.class.getCanonicalName());
         return annotationTypes;
     }
@@ -54,14 +55,14 @@ public class ALSProcessor extends AbstractProcessor {
             Set<? extends Element> elements = roundEnv.getElementsAnnotatedWith(annotation);
             for (Element element : elements) {
                 if (element instanceof TypeElement) {//类
-                    if (Service.class.getName().equals(annotationClassName)) {
+                    if (ServicePort.class.getName().equals(annotationClassName)) {
                         alsProcessorHelper.processService((TypeElement) element);
                     }
                 } else if (element instanceof ExecutableElement) {//方法
                     if (Page.class.getName().equals(annotationClassName)) {
                         alsProcessorHelper.processPage((ExecutableElement) element);
-                    } else if (Get.class.getName().equals(annotationClassName)) {
-                        alsProcessorHelper.processGet((ExecutableElement) element);
+                    } else if (Request.class.getName().equals(annotationClassName)) {
+                        alsProcessorHelper.processRequest((ExecutableElement) element);
                     }
                 } else if (element instanceof VariableElement) {//参数
                     //alsProcessorHelper.processParam((VariableElement) element);
@@ -81,6 +82,13 @@ public class ALSProcessor extends AbstractProcessor {
                             String type = element.asType().toString();
                             if (!type.equals(TypeName.get(String.class).toString())) {
                                 throw new IllegalArgumentException(jsonAnnotation.message());
+                            }
+                        }
+                        UpXml xmlAnnotation = element.getAnnotation(UpXml.class);
+                        if (xmlAnnotation != null) {
+                            String type = element.asType().toString();
+                            if (!type.equals(TypeName.get(String.class).toString())) {
+                                throw new IllegalArgumentException(xmlAnnotation.message());
                             }
                         }
                     }

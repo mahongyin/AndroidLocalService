@@ -2,6 +2,7 @@ package com.android.local.service.core;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.util.Log;
 
 import com.android.local.service.core.data.ServiceConfig;
@@ -9,6 +10,7 @@ import com.android.local.service.core.data.ServiceInfo;
 import com.android.local.service.core.i.IService;
 import org.nanohttpd.protocols.http.NanoHTTPD;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,16 +24,23 @@ public class ALSHelper {
     private static Context context;
     private static final List<ServiceInfo> serviceList = new ArrayList<>();
 
-    public static Context getContext() {
-        return context;
+    public static void init(Context appContext) {
+        ALSHelper.context = appContext;
+    }
+
+    public static File getCacheDir() {
+        if (context == null) throw new RuntimeException("请先调用init方法");
+        return context.getExternalCacheDir() != null ?
+                context.getExternalCacheDir() : context.getCacheDir();
+    }
+
+    public static AssetManager getAssetManager() {
+        if (context == null) return null;
+        return context.getAssets();
     }
 
     public static List<ServiceInfo> getServiceList() {
         return serviceList;
-    }
-
-    public static void init(Context context) {
-        ALSHelper.context = context;
     }
 
     public static void startService(ServiceConfig serviceConfig) {

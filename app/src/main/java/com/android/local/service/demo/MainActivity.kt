@@ -27,8 +27,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        //只用之前先初始化
-        ALSHelper.init(this)
+        //使用之前先初始化
+        ALSHelper.init(this.applicationContext)
         //启动单个服务用法
         ALSHelper.startService(ServiceConfig(AndroidService::class.java))
         //启动多个服务用法
@@ -45,6 +45,11 @@ class MainActivity : AppCompatActivity() {
         initObserver()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        // 可选
+        //ALSHelper.stopAllServices()
+    }
     private fun pcServiceDemoTip() {
         val pcBaseUrl = "http://${ipAddress}:${pcServicePort}"
         val showH5Page = "$pcBaseUrl/index"

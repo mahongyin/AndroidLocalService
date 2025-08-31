@@ -1,16 +1,16 @@
 package com.android.local.service.demo.service
 
 import com.android.local.service.BuildConfig
-import com.android.local.service.annotation.Get
-import com.android.local.service.annotation.Service
+import com.android.local.service.annotation.Request
+import com.android.local.service.annotation.ServicePort
 import com.android.local.service.demo.livedata.LiveDataHelper
 import java.util.*
 import kotlin.collections.HashMap
 
-@Service(port = 1111)
+@ServicePort(port = 1111)
 abstract class AndroidService {
 
-    @Get("appInfo")
+    @Request("appInfo")
     fun getAppInfo(
     ): HashMap<String, Any> {
         return hashMapOf(
@@ -21,7 +21,7 @@ abstract class AndroidService {
         )
     }
 
-    @Get("changeData")
+    @Request("changeData")
     fun changeData(data: String) {
         LiveDataHelper.changeDataLiveData.postValue(data)
     }
