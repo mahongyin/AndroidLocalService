@@ -246,13 +246,13 @@ public class ALSService extends NanoHTTPD {
                 allowHeaders = requestHeaders;
             }
         }
-        if (response != null){
-        response.addHeader("Access-Control-Allow-Headers", allowHeaders);
-        //[OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, PATCH]
-        response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, HEAD");
-        response.addHeader("Access-Control-Allow-Credentials", "true");
-        response.addHeader("Access-Control-Allow-Origin", "*");
-        response.addHeader("Access-Control-Max-Age", String.valueOf(42 * 60 * 60));
+        if (response != null) {
+            response.addHeader("Access-Control-Allow-Headers", allowHeaders);
+            //[OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, PATCH]
+            response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, HEAD");
+            response.addHeader("Access-Control-Allow-Credentials", "true");
+            response.addHeader("Access-Control-Allow-Origin", "*");
+            response.addHeader("Access-Control-Max-Age", String.valueOf(42 * 60 * 60));
         }
         return response;
     }

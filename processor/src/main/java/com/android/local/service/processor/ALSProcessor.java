@@ -1,7 +1,7 @@
 package com.android.local.service.processor;
 
-import com.android.local.service.annotation.Request;
 import com.android.local.service.annotation.Page;
+import com.android.local.service.annotation.Request;
 import com.android.local.service.annotation.RequestHeader;
 import com.android.local.service.annotation.ServicePort;
 import com.android.local.service.annotation.UpFile;
@@ -10,9 +10,7 @@ import com.android.local.service.annotation.UpXml;
 import com.android.local.service.processor.helper.ALSProcessorHelper;
 import com.squareup.javapoet.TypeName;
 
-import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
