@@ -8,6 +8,7 @@ import com.android.local.service.annotation.ServicePort
 import com.android.local.service.annotation.UpFile
 import com.android.local.service.annotation.UpJson
 import com.android.local.service.annotation.UpXml
+import com.android.local.service.core.e.CustomResponse
 import com.android.local.service.demo.livedata.LiveDataHelper
 import java.util.UUID
 
@@ -19,7 +20,15 @@ abstract class PCService {
 
     @Request("saveXml")
     fun saveXml(@RequestHeader() header: Map<String, String>, @UpXml xml2: String): String {
+        // 很另类 使用主动抛出异常 实现自定义响应 json
+        throw CustomResponse(header)
         return xml2;
+    }
+
+    @Request("custom")
+    fun customResponse() {
+        // 很另类 使用主动抛出异常 实现自定义响应 json
+        throw CustomResponse(listOf<String>())
     }
     @Request("saveData")
     fun saveData(content: String): String {

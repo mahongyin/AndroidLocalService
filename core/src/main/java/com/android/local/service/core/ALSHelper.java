@@ -8,12 +8,17 @@ import android.util.Log;
 import com.android.local.service.core.data.ServiceConfig;
 import com.android.local.service.core.data.ServiceInfo;
 import com.android.local.service.core.i.IService;
+import com.android.local.service.core.service.ALSService;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.nanohttpd.protocols.http.NanoHTTPD;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +32,15 @@ public class ALSHelper {
 
     public static void init(Context appContext) {
         ALSHelper.context = appContext;
+    }
+
+    /**
+     * 配置返回数据结构字段名，可空【即没有这个字段】 int code, string message, object data
+     */
+    public static void configResponse(String codeName, String messageName, String dataName) {
+        ALSService.CODE_NAME = codeName;
+        ALSService.MESSAGE_NAME = messageName;
+        ALSService.DATA_NAME = dataName;
     }
 
     public static File getCacheDir() {
@@ -140,6 +154,110 @@ public class ALSHelper {
             Log.d(TAG, "initService《" + serviceInfo.getServiceName() + "》服务启动《《失败》》，端口号：" +
                     servicePort + "  失败原因是：" + e.getMessage());
         }
+    }
+
+
+    public static Map<String, String> jsonStringToMap(String json) {
+        Map<String, String> map = new HashMap<>();
+        try {
+            JSONObject jsonObject = new JSONObject(json);
+            for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
+                String key = it.next();
+                map.put(key, jsonObject.getString(key));
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return map;
+    }
+
+    public static Map<String, Object> jsonToMap(JSONObject jsonObject) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
+                String key = it.next();
+                Object value = jsonObject.get(key);
+                if (value instanceof JSONObject) {
+                    map.put(key, jsonToMap((JSONObject) value));
+                } else if (value instanceof JSONArray) {
+                    map.put(key, jsonArrayToList((JSONArray) value));
+                } else {
+                    map.put(key, value);
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return map;
+    }
+
+    public static List<Object> jsonArrayToList(JSONArray jsonArray) {
+        List<Object> list = new ArrayList<>();
+        try {
+            for (int i = 0; i < jsonArray.length(); i++) {
+                Object value = jsonArray.get(i);
+                if (value instanceof JSONObject) {
+                    list.add(jsonToMap((JSONObject) value));
+                } else if (value instanceof JSONArray) {
+                    list.add(jsonArrayToList((JSONArray) value));
+                } else {
+                    list.add(value);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public static String mapToJsonString(Map<String, Object> map) {
+        JSONObject jsonObject = new JSONObject(map);
+        return jsonObject.toString();
+    }
+
+    public static String mapToJsonString2(Map<String, Object> map) {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                jsonObject.put(entry.getKey(), entry.getValue());
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return jsonObject.toString();
+    }
+
+    public static JSONObject mapToJSONObject(Map<String, Object> map) {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            for (Map.Entry<String, Object> entry : map.entrySet()) {
+                Object value = entry.getValue();
+                if (value instanceof Map) {
+                    jsonObject.put(entry.getKey(), mapToJSONObject((Map<String, Object>) value));
+                } else if (value instanceof List) {
+                    jsonObject.put(entry.getKey(), listToJSONArray((List<?>) value));
+                } else {
+                    jsonObject.put(entry.getKey(), value);
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return jsonObject;
+    }
+
+    public static JSONArray listToJSONArray(List<?> list) {
+        JSONArray jsonArray = new JSONArray();
+        for (Object item : list) {
+            if (item instanceof Map) {
+                jsonArray.put(mapToJSONObject((Map<String, Object>) item));
+            } else if (item instanceof List) {
+                jsonArray.put(listToJSONArray((List<?>) item));
+            } else {
+                jsonArray.put(item);
+            }
+        }
+        return jsonArray;
     }
 }
 

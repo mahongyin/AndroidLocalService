@@ -287,15 +287,24 @@ public class ALSProcessorHelper {
             }
         }
         stringBuffer.append(")");
-        if (element.getReturnType() instanceof NoType) {
+        //- 添加try catch
+        builder.beginControlFlow("try");
+        //- 添加try catch
+        if (element.getReturnType() instanceof NoType) {// 没有返回值的
+            //method(xx,xxx,);
             builder.addStatement("$N$N", methodName, stringBuffer.toString());
             builder.addStatement("return realService.successEmpty()");
-        } else {
+        } else { // 有返回值的
             String paramAll = stringBuffer.toString();
             // 这里是没有@UpFile注解的情况
             builder.addStatement("$T result = $N$N", element.getReturnType(), methodName, paramAll);
             builder.addStatement("return realService.success(result)");
         }
+        //- 添加try catch
+        builder.nextControlFlow("catch (Exception e)")
+                .addStatement("return realService.customResponse(e.getMessage())")
+                .endControlFlow();
+        //- 添加try catch
         builder.endControlFlow();
     }
 

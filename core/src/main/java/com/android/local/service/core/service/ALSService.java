@@ -10,9 +10,6 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUpload;
 import org.apache.commons.fileupload.RequestContext;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.nanohttpd.protocols.http.IHTTPSession;
 import org.nanohttpd.protocols.http.NanoHTTPD;
 import org.nanohttpd.protocols.http.request.Method;
@@ -24,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -32,7 +28,10 @@ import java.util.Map;
 public class ALSService extends NanoHTTPD {
 
     private static final String TAG = ALSService.class.getSimpleName();
-
+    // 统一响应字段
+    public static String CODE_NAME = "code";
+    public static String MESSAGE_NAME = "message";
+    public static String DATA_NAME = "data";
     private RequestListener requestListener;
     private FileUpload upload;
 
@@ -229,7 +228,7 @@ public class ALSService extends NanoHTTPD {
                 }
             }
             for (Map.Entry<String, List<Map<String, Object>>> entry : filesInfo.entrySet()) {
-                result.put(entry.getKey(), listToJSONArray(entry.getValue()).toString());
+                result.put(entry.getKey(), ALSHelper.listToJSONArray(entry.getValue()).toString());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -261,17 +260,33 @@ public class ALSService extends NanoHTTPD {
         return fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase(Locale.getDefault());
     }
 
-    private Response jsonResponse(int code, String message, Object data) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("code", code);
-        result.put("message", message);
-        if (data != null) {
-            result.put("data", data);
+    /**
+     * 自定义响应
+     */
+    public Response customResponse(String jsonResponse) {
+        if (jsonResponse == null){
+            jsonResponse = "{}";
         }
         return Response.newFixedLengthResponse(
                 Status.OK,
                 mimeTypes().get("json"),
-                mapToJsonString(result)
+                jsonResponse);
+    }
+
+    /**
+     * 返回JSON响应  字段 code message data
+     */
+    private Response jsonResponse(int code, String message, Object data) {
+        Map<String, Object> result = new HashMap<>();
+        result.put(CODE_NAME, code);
+        result.put(MESSAGE_NAME, message);
+        if (data != null) {
+            result.put(DATA_NAME, data);
+        }
+        return Response.newFixedLengthResponse(
+                Status.OK,
+                mimeTypes().get("json"),
+                ALSHelper.mapToJsonString(result)
         );
     }
 
@@ -327,86 +342,4 @@ public class ALSService extends NanoHTTPD {
         return fileNotFoundResponse();
     }
 
-    private Map<String, String> jsonStringToMap(String json) throws JSONException {
-        Map<String, String> map = new HashMap<>();
-        JSONObject jsonObject = new JSONObject(json);
-        for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
-            String key = it.next();
-            map.put(key, jsonObject.getString(key));
-        }
-        return map;
-    }
-
-    private Map<String, Object> jsonToMap(JSONObject jsonObject) throws JSONException {
-        Map<String, Object> map = new HashMap<>();
-        for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
-            String key = it.next();
-            Object value = jsonObject.get(key);
-            if (value instanceof JSONObject) {
-                map.put(key, jsonToMap((JSONObject) value));
-            } else if (value instanceof JSONArray) {
-                map.put(key, jsonArrayToList((JSONArray) value));
-            } else {
-                map.put(key, value);
-            }
-        }
-        return map;
-    }
-
-    private List<Object> jsonArrayToList(JSONArray jsonArray) throws JSONException {
-        List<Object> list = new ArrayList<>();
-        for (int i = 0; i < jsonArray.length(); i++) {
-            Object value = jsonArray.get(i);
-            if (value instanceof JSONObject) {
-                list.add(jsonToMap((JSONObject) value));
-            } else if (value instanceof JSONArray) {
-                list.add(jsonArrayToList((JSONArray) value));
-            } else {
-                list.add(value);
-            }
-        }
-        return list;
-    }
-
-    private String mapToJsonString(Map<String, Object> map) {
-        JSONObject jsonObject = new JSONObject(map);
-        return jsonObject.toString();
-    }
-
-    private String mapToJsonString2(Map<String, Object> map) throws JSONException {
-        JSONObject jsonObject = new JSONObject();
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            jsonObject.put(entry.getKey(), entry.getValue());
-        }
-        return jsonObject.toString();
-    }
-
-    private JSONObject mapToJSONObject(Map<String, Object> map) throws JSONException {
-        JSONObject jsonObject = new JSONObject();
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            Object value = entry.getValue();
-            if (value instanceof Map) {
-                jsonObject.put(entry.getKey(), mapToJSONObject((Map<String, Object>) value));
-            } else if (value instanceof List) {
-                jsonObject.put(entry.getKey(), listToJSONArray((List<?>) value));
-            } else {
-                jsonObject.put(entry.getKey(), value);
-            }
-        }
-        return jsonObject;
-    }
-
-    private JSONArray listToJSONArray(List<?> list) throws JSONException {
-        JSONArray jsonArray = new JSONArray();
-        for (Object item : list) {
-            if (item instanceof Map) {
-                jsonArray.put(mapToJSONObject((Map<String, Object>) item));
-            } else if (item instanceof List) {
-                jsonArray.put(listToJSONArray((List<?>) item));
-            } else {
-                jsonArray.put(item);
-            }
-        }
-        return jsonArray;
-    }
 }

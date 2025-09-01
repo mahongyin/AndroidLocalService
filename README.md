@@ -3,13 +3,16 @@
 
 ### [**Demo下载体验**](https://www.pgyer.com/MLpo)
 
+0.0.6 支持请求header
+0.0.7 支持自定义响应
+
 1. 添加依赖
 
 ```groovy
-    implementation 'io.github.mahongyin.android-local-service:core-lite:0.0.6' //不支持上传文件，够用
-    implementation 'io.github.mahongyin.android-local-service:core:0.0.6'
-    implementation 'io.github.mahongyin.android-local-service:annotation:0.0.6'
-    kapt 'io.github.mahongyin.android-local-service:processor:0.0.6'
+    implementation 'io.github.mahongyin.android-local-service:core-lite:0.0.7' //不支持上传文件，够用
+    implementation 'io.github.mahongyin.android-local-service:core:0.0.7'
+    implementation 'io.github.mahongyin.android-local-service:annotation:0.0.7'
+    kapt 'io.github.mahongyin.android-local-service:processor:0.0.7'
 ```
 
 2. 创建本地服务（具体效果可以看项目demo） 定义如下类
