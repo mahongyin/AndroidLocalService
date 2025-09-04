@@ -266,13 +266,13 @@ public class ALSHelper {
     public static String mapToXml(Map<String, Object> map) {
         XmlSerializer serializer = Xml.newSerializer();
         StringWriter writer = new StringWriter();
-        String rootElement = "root";
+        //String rootElement = "root";
         try {
             serializer.setOutput(writer);
             serializer.startDocument("UTF-8", true);
-            serializer.startTag("", rootElement);
+            //serializer.startTag("", rootElement);
             serializeMap(serializer, map);
-            serializer.endTag("", rootElement);
+            //serializer.endTag("", rootElement);
             serializer.endDocument();
         } catch (Exception e) {
             Log.e(TAG, "mapToXml error", e);
