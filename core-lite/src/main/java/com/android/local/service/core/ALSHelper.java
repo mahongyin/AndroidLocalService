@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.util.Log;
+import android.util.Xml;
 
 import com.android.local.service.core.data.ServiceConfig;
 import com.android.local.service.core.data.ServiceInfo;
@@ -14,8 +15,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.nanohttpd.protocols.http.NanoHTTPD;
+import org.xmlpull.v1.XmlSerializer;
 
 import java.io.File;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -259,5 +262,63 @@ public class ALSHelper {
         }
         return jsonArray;
     }
+
+    public static String mapToXml(Map<String, Object> map) {
+        XmlSerializer serializer = Xml.newSerializer();
+        StringWriter writer = new StringWriter();
+        String rootElement = "root";
+        try {
+            serializer.setOutput(writer);
+            serializer.startDocument("UTF-8", true);
+            serializer.startTag("", rootElement);
+            serializeMap(serializer, map);
+            serializer.endTag("", rootElement);
+            serializer.endDocument();
+        } catch (Exception e) {
+            Log.e(TAG, "mapToXml error", e);
+            return ""; // 或者抛出异常
+        }
+        return writer.toString();
+    }
+
+    private static void serializeMap(XmlSerializer serializer, Map<String, Object> map) throws Exception {
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            if (key == null) continue;
+
+            serializer.startTag("", key);
+            if (value != null) {
+                if (value instanceof Map) {
+                    // 递归处理嵌套Map
+                    serializeMap(serializer, (Map<String, Object>) value);
+                } else if (value instanceof List) {
+                    // 处理List
+                    serializeList(serializer, key, (List<?>) value);
+                } else {
+                    serializer.text(value.toString());
+                }
+            }
+            serializer.endTag("", key);
+        }
+    }
+
+    private static void serializeList(XmlSerializer serializer, String tagName, List<?> list) throws Exception {
+        for (Object item : list) {
+            serializer.startTag("", tagName);
+            if (item != null) {
+                if (item instanceof Map) {
+                    serializeMap(serializer, (Map<String, Object>) item);
+                } else if (item instanceof List) {
+                    serializeList(serializer, tagName, (List<?>) item);
+                } else {
+                    serializer.text(item.toString());
+                }
+            }
+            serializer.endTag("", tagName);
+        }
+    }
+
 }
 

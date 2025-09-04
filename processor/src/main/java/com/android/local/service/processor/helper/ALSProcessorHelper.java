@@ -35,7 +35,7 @@ public class ALSProcessorHelper {
     private static final String AUTO_CREATE_CLASS_PREFIX = "ALS_";
 
     private static final String APPLICATION_JSON = "application/json";
-    private static final String APPLICATION_XML = "application/xml";
+    private static final String APPLICATION_XML = "/xml";
     private static final String MULTIPART_FORM_DATA = "multipart/form-data";
 
     private static final String AFTER_PARAM_NAME = "contentType";
@@ -302,7 +302,7 @@ public class ALSProcessorHelper {
         }
         //- 添加try catch
         builder.nextControlFlow("catch (Exception e)")
-                .addStatement("return realService.customResponse(e.getMessage())")
+                .addStatement("return realService.customResponse(e)")
                 .endControlFlow();
         //- 添加try catch
         builder.endControlFlow();

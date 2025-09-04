@@ -15,15 +15,11 @@ import java.util.Map;
  * 主动抛出异常的方式实现自定义返回内容
  */
 public class CustomResponse extends Exception {
+    private String contentType = "application/json";
 
     private CustomResponse() {
     }
-    /**
-     * 需要json格式
-     */
-    private CustomResponse(String jsonResponse) {
-        super(jsonResponse);
-    }
+
     public CustomResponse(JSONObject response) {
         super(response != null ? response.toString() : "{\"message\":\"实现自定义返回内容。但response为空\"}");
     }
@@ -36,5 +32,35 @@ public class CustomResponse extends Exception {
     public CustomResponse(List<?> response) {
         super(response != null ? ALSHelper.listToJSONArray(response).toString() : "{\"message\":\"实现自定义返回内容。但response为空\"}");
     }
+    public CustomResponse(String response) {
+        super(response);
+    }
+    public CustomResponse(Map<String, Object> response, String contentType) {
+        super(getResponse(response, contentType));
+        this.contentType = contentType;
+    }
+    public CustomResponse(String response, String contentType) {
+        super(getResponse(response, contentType));
+        this.contentType = contentType;
+    }
+    public String getContentType() {
+        return contentType;
+    }
 
+    private static String getResponse(Map<String, Object> response, String contentType) {
+        String res = "{\"message\":\"实现自定义返回内容。但response为空\"}";
+        if (contentType != null && contentType.contains("/xml")) {
+            return response != null ? ALSHelper.mapToXml(response) : "<message>实现自定义返回内容。但response为空</message>";
+        } else {
+            return response != null ? ALSHelper.mapToJsonString(response) : res;
+        }
+    }
+    private static String getResponse(String response, String contentType) {
+        String res = "{\"message\":\"实现自定义返回内容。但response为空\"}";
+        if (contentType != null && contentType.contains("/xml")) {
+            return response != null ? response : "<message>实现自定义返回内容。但response为空</message>";
+        } else {
+            return response != null ? response : res;
+        }
+    }
 }

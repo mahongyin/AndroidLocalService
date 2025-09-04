@@ -1,14 +1,15 @@
 package com.android.local.service.demo.service
 
 import com.android.local.service.BuildConfig
-import com.android.local.service.annotation.Request
 import com.android.local.service.annotation.Page
+import com.android.local.service.annotation.Request
 import com.android.local.service.annotation.RequestHeader
 import com.android.local.service.annotation.ServicePort
 import com.android.local.service.annotation.UpFile
 import com.android.local.service.annotation.UpJson
 import com.android.local.service.annotation.UpXml
 import com.android.local.service.core.e.CustomResponse
+import com.android.local.service.core.service.ALSService
 import com.android.local.service.demo.livedata.LiveDataHelper
 import java.util.UUID
 
@@ -21,7 +22,7 @@ abstract class PCService {
     @Request("saveXml")
     fun saveXml(@RequestHeader() header: Map<String, String>, @UpXml xml2: String): String {
         // 很另类 使用主动抛出异常 实现自定义响应 json
-        throw CustomResponse(header)
+        throw CustomResponse(header, ALSService.mimeTypes().get("xml"))
         return xml2;
     }
 

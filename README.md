@@ -9,10 +9,10 @@
 1. 添加依赖
 
 ```groovy
-    implementation 'io.github.mahongyin.android-local-service:core-lite:0.0.7' //不支持上传文件，够用
-    implementation 'io.github.mahongyin.android-local-service:core:0.0.7'
-    implementation 'io.github.mahongyin.android-local-service:annotation:0.0.7'
-    kapt 'io.github.mahongyin.android-local-service:processor:0.0.7'
+    implementation 'io.github.mahongyin.android-local-service:core-lite:0.0.8' //不支持上传文件，够用
+    implementation 'io.github.mahongyin.android-local-service:core:0.0.8'
+    implementation 'io.github.mahongyin.android-local-service:annotation:0.0.8'
+    kapt 'io.github.mahongyin.android-local-service:processor:0.0.8'
 ```
 
 2. 创建本地服务（具体效果可以看项目demo） 定义如下类
@@ -26,8 +26,8 @@ abstract class AndroidService {
     @Page("index")
     fun getIndexFileName() = "test_page.html"
 
-    //@Get注解在方法上边
-    @Get("query")
+    //@Request注解在方法上边
+    @Request("query")
     fun query(
         aaa: Boolean,
         bbb: Double,
@@ -38,22 +38,22 @@ abstract class AndroidService {
         return listOf("$aaa", "$bbb", "$ccc", ddd, "$eee")
     }
     // @RequestHeader() 可以获取请求头参数，无注解则不关心header
-    @Get("saveData")
+    @Request("saveData")
     fun saveData(@RequestHeader() header: Map<String, String>, content: String) {
         LiveDataHelper.saveDataLiveData.postValue(content + UUID.randomUUID())
     }
     // 文件参数需要注解@UpFile
-    @Get("saveFile")
+    @Request("saveFile")
     fun saveData(@UpFile file: File, content: String) {
         LiveDataHelper.saveDataLiveData.postValue(content + UUID.randomUUID())
     }   
     // json参数需要注解@UpJson
-    @Get("saveJson")
+    @Request("saveJson")
     fun saveData(@UpJson json: String) {
         LiveDataHelper.saveDataLiveData.postValue(content + UUID.randomUUID())
     }
 
-    @Get("queryAppInfo")
+    @Request("queryAppInfo")
     fun getAppInfo(): HashMap<String, Any> {
         return hashMapOf(
             "applicationId" to BuildConfig.APPLICATION_ID,

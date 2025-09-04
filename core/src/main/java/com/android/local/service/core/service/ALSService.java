@@ -4,6 +4,7 @@ import android.content.res.AssetManager;
 import android.util.Log;
 
 import com.android.local.service.core.ALSHelper;
+import com.android.local.service.core.e.CustomResponse;
 import com.android.local.service.core.i.RequestListener;
 
 import org.apache.commons.fileupload.FileItem;
@@ -69,7 +70,7 @@ public class ALSService extends NanoHTTPD {
             }
         }
         // 接收请求类型
-        if (Method.POST.equals(method)) {
+        if (Method.POST.equals(method) || Method.PUT.equals(method) || Method.NOTIFY.equals(method)) {
             try {
                 if (contentType.contains("multipart/form-data")) {
                     params = handleMultipartData(session);
@@ -78,7 +79,7 @@ public class ALSService extends NanoHTTPD {
                     Log.d("JSON Body", body);
                     params = new HashMap<>();
                     params.put("json", body);
-                } else if (contentType.contains("application/xml")) {//请求体中的数据是 XML 格式
+                } else if (contentType.contains("/xml")) {//请求体中的数据是 XML 格式
                     String body = getRequestBody(session);
                     Log.d("XML Body", body);
                     params = new HashMap<>();
@@ -104,7 +105,7 @@ public class ALSService extends NanoHTTPD {
         if (requestListener != null) {
             Map<String, String> headerMap = session.getHeaders();
             Map<String, String> bodyMap = params != null ? params : new HashMap<>();
-            response = requestListener.onRequest(contentType, action, headerMap, bodyMap);
+            response = requestListener.onRequest(action, contentType, headerMap, bodyMap);
         } else {
             throw new RuntimeException("setRequestListener 方法没有设置");
         }
@@ -262,15 +263,13 @@ public class ALSService extends NanoHTTPD {
 
     /**
      * 自定义响应
+     * mimeTypes().get("json")
      */
-    public Response customResponse(String jsonResponse) {
-        if (jsonResponse == null){
-            jsonResponse = "{}";
-        }
+    public Response customResponse(Exception response) {
         return Response.newFixedLengthResponse(
                 Status.OK,
-                mimeTypes().get("json"),
-                jsonResponse);
+                response instanceof CustomResponse ? ((CustomResponse) response).getContentType() : mimeTypes().get("json"),
+                response.getMessage());
     }
 
     /**
