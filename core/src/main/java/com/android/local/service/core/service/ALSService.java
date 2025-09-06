@@ -63,11 +63,15 @@ public class ALSService extends NanoHTTPD {
 //        session.getQueryParameterString();
 
         String contentType = "text/plain";
-        if (session.getHeaders().containsKey("content-type")) {
-            String tmpType = session.getHeaders().get("content-type");
-            if (tmpType != null) {
-                contentType = tmpType.toLowerCase(Locale.getDefault());
-            }
+        String tmpType = session.getHeaders().get("content-type");
+        if (tmpType == null) {
+            tmpType = session.getHeaders().get("Content-Type");
+        }
+        if (tmpType == null) {
+            tmpType = session.getHeaders().get("CONTENT-TYPE");
+        }
+        if (tmpType != null) {
+            contentType = tmpType.toLowerCase(Locale.getDefault());
         }
         // 接收请求类型
         if (Method.POST.equals(method) || Method.PUT.equals(method) || Method.NOTIFY.equals(method)) {
@@ -75,15 +79,27 @@ public class ALSService extends NanoHTTPD {
                 if (contentType.contains("multipart/form-data")) {
                     params = handleMultipartData(session);
                 } else if (contentType.contains("application/json")) {//请求体中的数据是 JSON 格式
-                    String body = getRequestBody(session);
-                    Log.d("JSON Body", body);
-                    params = new HashMap<>();
-                    params.put("json", body);
+//                    String body = getRequestBody(session);
+//                    Log.d("JSON Body", body);
+//                    params = new HashMap<>();
+//                    params.put("json", body);
+
+                    Map<String, String> body = new HashMap<>();
+                    session.parseBody(body);
+                    Map<String, String> newParams = new HashMap<>();
+                    newParams.put("json", body.get("postData"));
+                    params = newParams;
                 } else if (contentType.contains("/xml")) {//请求体中的数据是 XML 格式
-                    String body = getRequestBody(session);
-                    Log.d("XML Body", body);
-                    params = new HashMap<>();
-                    params.put("xml", body);
+//                    String body = getRequestBody(session);
+//                    Log.d("XML Body", body);
+//                    params = new HashMap<>();
+//                    params.put("xml", body);
+
+                    Map<String, String> body = new HashMap<>();
+                    session.parseBody(body);
+                    Map<String, String> newParams = new HashMap<>();
+                    newParams.put("xml", body.get("postData"));
+                    params = newParams;
                 } else {
                     Map<String, String> body = new HashMap<>();
                     session.parseBody(body);

@@ -16,7 +16,6 @@ import org.nanohttpd.protocols.http.response.Status;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -52,11 +51,15 @@ public class ALSService extends NanoHTTPD {
 //        session.getQueryParameterString();
 
         String contentType = "text/plain";
-        if (session.getHeaders().containsKey("content-type")) {
-            String tmpType = session.getHeaders().get("content-type");
-            if (tmpType != null) {
-                contentType = tmpType.toLowerCase(Locale.getDefault());
-            }
+        String tmpType = session.getHeaders().get("content-type");
+        if (tmpType == null) {
+            tmpType = session.getHeaders().get("Content-Type");
+        }
+        if (tmpType == null) {
+            tmpType = session.getHeaders().get("CONTENT-TYPE");
+        }
+        if (tmpType != null) {
+            contentType = tmpType.toLowerCase(Locale.getDefault());
         }
         // 接收请求类型
         if (Method.POST.equals(method) || Method.PUT.equals(method) || Method.NOTIFY.equals(method)) {
@@ -64,21 +67,33 @@ public class ALSService extends NanoHTTPD {
                 if (contentType.contains("multipart/form-data")) {
                     params = handleMultipartData(session);
                 } else if (contentType.contains("application/json")) {//请求体中的数据是 JSON 格式
-                    String body = getRequestBody(session);
-                    Log.d("JSON Body", body);
-                    params = new HashMap<>();
-                    params.put("json", body);
+//                    String body = getRequestBody(session);
+//                    Log.d("JSON Body", body);
+//                    params = new HashMap<>();
+//                    params.put("json", body);
+
+                    Map<String, String> body = new HashMap<>();
+                    session.parseBody(body);
+                    Map<String, String> newParams = new HashMap<>();
+                    newParams.put("json", body.get("postData"));
+                    params = newParams;
                 } else if (contentType.contains("/xml")) {//请求体中的数据是 XML 格式
-                    String body = getRequestBody(session);
-                    Log.d("XML Body", body);
-                    params = new HashMap<>();
-                    params.put("xml", body);
+//                    String body = getRequestBody(session);
+//                    Log.d("XML Body", body);
+//                    params = new HashMap<>();
+//                    params.put("xml", body);
+
+                    Map<String, String> body = new HashMap<>();
+                    session.parseBody(body);
+                    Map<String, String> newParams = new HashMap<>();
+                    newParams.put("xml", body.get("postData"));
+                    params = newParams;
                 } else {
 //                    String queryString = session.getQueryParameterString();
 //                    Map<String, List<String>> parameters = session.getParameters();
-//                    Log.i(TAG, "queryString = " + queryString);
-//                    Log.i(TAG, "parameters = " + ALSHelper.mapToJsonString(parameters));
-//                    Log.i(TAG, "params = " + ALSHelper.mapToJsonString(params));
+//                    Log.d(TAG, "queryString = " + queryString);
+//                    Log.d(TAG, "parameters = " + ALSHelper.mapToJsonString(parameters));
+//                    Log.d(TAG, "params = " + ALSHelper.mapToJsonString(params));
 
                     Map<String, String> body = new HashMap<>();
                     session.parseBody(body);
@@ -86,10 +101,10 @@ public class ALSService extends NanoHTTPD {
 
 //                    String queryString2 = session.getQueryParameterString();
 //                    Map<String, List<String>> parameters2 = session.getParameters();
-//                    Log.i(TAG, "queryString2 = " + queryString2);
-//                    Log.i(TAG, "parameters2 = " + ALSHelper.mapToJsonString(parameters2));
-//                    Log.i(TAG, "params2 = " + ALSHelper.mapToJsonString(params));
-//                    Log.i(TAG, "body3 = " + ALSHelper.mapToJsonString(body));
+//                    Log.d(TAG, "queryString2 = " + queryString2);
+//                    Log.d(TAG, "parameters2 = " + ALSHelper.mapToJsonString(parameters2));
+//                    Log.d(TAG, "params2 = " + ALSHelper.mapToJsonString(params));
+//                    Log.d(TAG, "body3 = " + ALSHelper.mapToJsonString(body));
 
                 }
             } catch (Exception e) {
@@ -148,8 +163,8 @@ public class ALSService extends NanoHTTPD {
         try {
 //            String queryString = session.getQueryParameterString();
 //            Map<String, List<String>> parameters = session.getParameters();
-//            Log.i(TAG, "queryString = " + queryString);
-//            Log.i(TAG, "parameters = " + ALSHelper.mapToJsonString(parameters));
+//            Log.d(TAG, "queryString = " + queryString);
+//            Log.d(TAG, "parameters = " + ALSHelper.mapToJsonString(parameters));
 
             Map<String, String> body = new HashMap<>();
             session.parseBody(body);
@@ -157,10 +172,10 @@ public class ALSService extends NanoHTTPD {
 
 //            String queryString2 = session.getQueryParameterString();
 //            Map<String, List<String>> parameters2 = session.getParameters();
-//            Log.i(TAG, "queryString2 = " + queryString2);
-//            Log.i(TAG, "parameters2 = " + ALSHelper.mapToJsonString(parameters2));
-//            Log.i(TAG, "params2 = " + ALSHelper.mapToJsonString(params));
-//            Log.i(TAG, "body2 = " + ALSHelper.mapToJsonString(body));
+//            Log.d(TAG, "queryString2 = " + queryString2);
+//            Log.d(TAG, "parameters2 = " + ALSHelper.mapToJsonString(parameters2));
+//            Log.d(TAG, "params2 = " + ALSHelper.mapToJsonString(params));
+//            Log.d(TAG, "body2 = " + ALSHelper.mapToJsonString(body));
 
             return params;
         } catch (Exception e) {
