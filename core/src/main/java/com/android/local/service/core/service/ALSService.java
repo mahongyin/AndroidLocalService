@@ -86,22 +86,22 @@ public class ALSService extends NanoHTTPD {
 
                     Map<String, String> body = new HashMap<>();
                     session.parseBody(body);
-                    session.getParms();
                     Map<String, String> newParams = new HashMap<>();
                     newParams.put("json", body.get("postData"));
                     params = newParams;
                 } else if (contentType.contains("/xml")) {//请求体中的数据是 XML 格式
-//                    String body = getRequestBody(session);
-//                    Log.d("XML Body", body);
-//                    params = new HashMap<>();
-//                    params.put("xml", body);
-
-                    Map<String, String> body = new HashMap<>();
-                    session.parseBody(body);
-                    session.getParms();
-                    Map<String, String> newParams = new HashMap<>();
-                    newParams.put("xml", body.get("postData"));
-                    params = newParams;
+                    if (contentType.contains("application/xml")) {
+                        Map<String, String> body = new HashMap<>();
+                        session.parseBody(body);
+                        Map<String, String> newParams = new HashMap<>();
+                        newParams.put("xml", body.get("postData"));
+                        params = newParams;
+                    } else {// 都用下面这个也行
+                        String body = getRequestBody(session);
+                        //Log.d("XML Body", body);
+                        params = new HashMap<>();
+                        params.put("xml", body);
+                    }
                 } else {
                     Map<String, String> body = new HashMap<>();
                     session.parseBody(body);
