@@ -20,15 +20,23 @@ abstract class PCService {
     fun getIndexFileName() = "test_page.html"
 
     @Request("saveXml")
-    fun saveXml(@RequestHeader() header: Map<String, String>, @UpXml xml2: String): String {
-        // 很另类 使用主动抛出异常 实现自定义响应 json
-        throw CustomResponse(header, ALSService.mimeTypes().get("xml"))
+    fun saveXml(@RequestHeader() requestHeader: Map<String, String>, @UpXml xml2: String): String {
+        // 很另类 使用主动抛出异常 实现自定义响应, contentType默认json
+        val responseHeader = mapOf(
+            //"Content-Type" to "application/xml",
+            "Access-Control-Allow-Origin" to "*",
+            "Access-Control-Allow-Methods" to "POST, GET, OPTIONS, DELETE, PUT, PATCH, HEAD",
+            "Access-Control-Allow-Headers" to "Content-Type, Authorization, X-Requested-With",
+        )
+        val customResponse = CustomResponse(responseHeader, ALSService.mimeTypes().get("xml"))
+        customResponse.headers = responseHeader
+        throw customResponse
         return xml2;
     }
 
     @Request("custom")
     fun customResponse() {
-        // 很另类 使用主动抛出异常 实现自定义响应 json
+        // 很另类 使用主动抛出异常 实现自定义响应json
         throw CustomResponse(listOf<String>())
     }
     @Request("saveData")

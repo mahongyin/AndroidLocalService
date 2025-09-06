@@ -93,7 +93,7 @@ public class ALSService extends NanoHTTPD {
         if (requestListener != null) {
             Map<String, String> headerMap = session.getHeaders();
             Map<String, String> bodyMap = params != null ? params : new HashMap<>();
-            response = requestListener.onRequest(action, contentType,  headerMap, bodyMap);
+            response = requestListener.onRequest(action, contentType, headerMap, bodyMap);
         } else {
             throw new RuntimeException("setRequestListener 方法没有设置");
         }
@@ -151,8 +151,8 @@ public class ALSService extends NanoHTTPD {
         }
         if (response != null) {
             response.addHeader("Access-Control-Allow-Headers", allowHeaders);
-            //[OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, PATCH]
-            response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, HEAD");
+            //[GET, POST, PUT, DELETE, HEAD"]
+            response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, HEAD, OPTIONS, TRACE, PATCH, SUBSCRIBE, UNSUBSCRIBE, NOTIFY");
             response.addHeader("Access-Control-Allow-Credentials", "true");
             response.addHeader("Access-Control-Allow-Origin", "*");
             response.addHeader("Access-Control-Max-Age", String.valueOf(42 * 60 * 60));
@@ -168,10 +168,19 @@ public class ALSService extends NanoHTTPD {
      * 自定义响应
      */
     public Response customResponse(Exception response) {
-        return Response.newFixedLengthResponse(
-                Status.OK,
-                response instanceof CustomResponse ? ((CustomResponse) response).getContentType() : mimeTypes().get("json"),
-                response.getMessage());
+        String mimeType = response instanceof CustomResponse ? ((CustomResponse) response).getContentType() : mimeTypes().get("json");
+        Response res = Response.newFixedLengthResponse(Status.OK, mimeType, response.getMessage());
+        res.addHeader("Access-Control-Allow-Origin", "*");
+        res.addHeader("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, DELETE, OPTIONS, TRACE, PATCH, SUBSCRIBE, UNSUBSCRIBE, NOTIFY");
+        res.addHeader("Access-Control-Allow-Credentials", "true");
+        res.addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+        res.addHeader("Access-Control-Max-Age", String.valueOf(42 * 60 * 60));
+        if (response instanceof CustomResponse) {
+            for (Map.Entry<String, String> entry : ((CustomResponse) response).getHeaders().entrySet()) {
+                res.addHeader(entry.getKey(), entry.getValue());
+            }
+        }
+        return res;
     }
 
     /**
