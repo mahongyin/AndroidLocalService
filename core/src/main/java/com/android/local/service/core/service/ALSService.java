@@ -86,6 +86,7 @@ public class ALSService extends NanoHTTPD {
 
                     Map<String, String> body = new HashMap<>();
                     session.parseBody(body);
+                    session.getParms();
                     Map<String, String> newParams = new HashMap<>();
                     newParams.put("json", body.get("postData"));
                     params = newParams;
@@ -97,6 +98,7 @@ public class ALSService extends NanoHTTPD {
 
                     Map<String, String> body = new HashMap<>();
                     session.parseBody(body);
+                    session.getParms();
                     Map<String, String> newParams = new HashMap<>();
                     newParams.put("xml", body.get("postData"));
                     params = newParams;
