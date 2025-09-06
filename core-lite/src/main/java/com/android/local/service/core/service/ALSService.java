@@ -16,6 +16,7 @@ import org.nanohttpd.protocols.http.response.Status;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -73,9 +74,23 @@ public class ALSService extends NanoHTTPD {
                     params = new HashMap<>();
                     params.put("xml", body);
                 } else {
+//                    String queryString = session.getQueryParameterString();
+//                    Map<String, List<String>> parameters = session.getParameters();
+//                    Log.i(TAG, "queryString = " + queryString);
+//                    Log.i(TAG, "parameters = " + ALSHelper.mapToJsonString(parameters));
+//                    Log.i(TAG, "params = " + ALSHelper.mapToJsonString(params));
+
                     Map<String, String> body = new HashMap<>();
                     session.parseBody(body);
                     params = session.getParms();
+
+//                    String queryString2 = session.getQueryParameterString();
+//                    Map<String, List<String>> parameters2 = session.getParameters();
+//                    Log.i(TAG, "queryString2 = " + queryString2);
+//                    Log.i(TAG, "parameters2 = " + ALSHelper.mapToJsonString(parameters2));
+//                    Log.i(TAG, "params2 = " + ALSHelper.mapToJsonString(params));
+//                    Log.i(TAG, "body3 = " + ALSHelper.mapToJsonString(body));
+
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -131,9 +146,23 @@ public class ALSService extends NanoHTTPD {
 
     private Map<String, String> handleMultipartData(IHTTPSession session) {
         try {
+//            String queryString = session.getQueryParameterString();
+//            Map<String, List<String>> parameters = session.getParameters();
+//            Log.i(TAG, "queryString = " + queryString);
+//            Log.i(TAG, "parameters = " + ALSHelper.mapToJsonString(parameters));
+
             Map<String, String> body = new HashMap<>();
             session.parseBody(body);
-            return session.getParms();
+            Map<String, String> params = session.getParms();
+
+//            String queryString2 = session.getQueryParameterString();
+//            Map<String, List<String>> parameters2 = session.getParameters();
+//            Log.i(TAG, "queryString2 = " + queryString2);
+//            Log.i(TAG, "parameters2 = " + ALSHelper.mapToJsonString(parameters2));
+//            Log.i(TAG, "params2 = " + ALSHelper.mapToJsonString(params));
+//            Log.i(TAG, "body2 = " + ALSHelper.mapToJsonString(body));
+
+            return params;
         } catch (Exception e) {
             Map<String, String> result = new HashMap<>();
             Log.e(TAG, "lib 'core-lite' is not support upload files, Please use lib 'core'");

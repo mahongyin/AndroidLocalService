@@ -20,6 +20,8 @@ import org.xmlpull.v1.XmlSerializer;
 import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -160,20 +162,6 @@ public class ALSHelper {
     }
 
 
-    public static Map<String, String> jsonStringToMap(String json) {
-        Map<String, String> map = new HashMap<>();
-        try {
-            JSONObject jsonObject = new JSONObject(json);
-            for (Iterator<String> it = jsonObject.keys(); it.hasNext(); ) {
-                String key = it.next();
-                map.put(key, jsonObject.getString(key));
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return map;
-    }
-
     public static Map<String, Object> jsonToMap(JSONObject jsonObject) {
         Map<String, Object> map = new HashMap<>();
         try {
@@ -213,32 +201,22 @@ public class ALSHelper {
         return list;
     }
 
-    public static String mapToJsonString(Map<String, Object> map) {
+    public static <T> String mapToJsonString(Map<String, T> map) {
         JSONObject jsonObject = new JSONObject(map);
         return jsonObject.toString();
     }
 
-    public static String mapToJsonString2(Map<String, Object> map) {
+    public static <T> JSONObject mapToJSONObject(Map<String, T> map) {
         JSONObject jsonObject = new JSONObject();
         try {
-            for (Map.Entry<String, Object> entry : map.entrySet()) {
-                jsonObject.put(entry.getKey(), entry.getValue());
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return jsonObject.toString();
-    }
-
-    public static JSONObject mapToJSONObject(Map<String, Object> map) {
-        JSONObject jsonObject = new JSONObject();
-        try {
-            for (Map.Entry<String, Object> entry : map.entrySet()) {
+            for (Map.Entry<String, T> entry : map.entrySet()) {
                 Object value = entry.getValue();
                 if (value instanceof Map) {
                     jsonObject.put(entry.getKey(), mapToJSONObject((Map<String, Object>) value));
-                } else if (value instanceof List) {
-                    jsonObject.put(entry.getKey(), listToJSONArray((List<?>) value));
+                } else if (value instanceof Collection) {
+                    jsonObject.put(entry.getKey(), listToJSONArray((Collection<?>) value));
+                } else if (value.getClass().isArray()) {
+                    jsonObject.put(entry.getKey(), listToJSONArray(Collections.singletonList(value)));
                 } else {
                     jsonObject.put(entry.getKey(), value);
                 }
@@ -249,13 +227,15 @@ public class ALSHelper {
         return jsonObject;
     }
 
-    public static JSONArray listToJSONArray(List<?> list) {
+    public static JSONArray listToJSONArray(Collection<?> list) {
         JSONArray jsonArray = new JSONArray();
         for (Object item : list) {
             if (item instanceof Map) {
                 jsonArray.put(mapToJSONObject((Map<String, Object>) item));
-            } else if (item instanceof List) {
-                jsonArray.put(listToJSONArray((List<?>) item));
+            } else if (item instanceof Collection) {
+                jsonArray.put(listToJSONArray((Collection<?>) item));
+            } else if (item.getClass().isArray()) {
+                jsonArray.put(listToJSONArray(Collections.singletonList(item)));
             } else {
                 jsonArray.put(item);
             }
@@ -263,7 +243,7 @@ public class ALSHelper {
         return jsonArray;
     }
 
-    public static String mapToXml(Map<String, Object> map) {
+    public static <T> String mapToXml(Map<String, T> map) {
         XmlSerializer serializer = Xml.newSerializer();
         StringWriter writer = new StringWriter();
         //String rootElement = "root";
@@ -281,21 +261,22 @@ public class ALSHelper {
         return writer.toString();
     }
 
-    private static void serializeMap(XmlSerializer serializer, Map<String, Object> map) throws Exception {
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
+    private static <T> void serializeMap(XmlSerializer serializer, Map<String, T> map) throws Exception {
+        for (Map.Entry<String, T> entry : map.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
-
             if (key == null) continue;
-
             serializer.startTag("", key);
             if (value != null) {
                 if (value instanceof Map) {
                     // 递归处理嵌套Map
                     serializeMap(serializer, (Map<String, Object>) value);
-                } else if (value instanceof List) {
+                } else if (value instanceof Collection) {
                     // 处理List
-                    serializeList(serializer, key, (List<?>) value);
+                    serializeList(serializer, key, (Collection<?>) value);
+                } else if (value.getClass().isArray()) {
+                    // 处理Array
+                    serializeList(serializer, key, Collections.singletonList(value));
                 } else {
                     serializer.text(value.toString());
                 }
@@ -304,14 +285,16 @@ public class ALSHelper {
         }
     }
 
-    private static void serializeList(XmlSerializer serializer, String tagName, List<?> list) throws Exception {
+    private static void serializeList(XmlSerializer serializer, String tagName, Collection<?> list) throws Exception {
         for (Object item : list) {
             serializer.startTag("", tagName);
             if (item != null) {
                 if (item instanceof Map) {
                     serializeMap(serializer, (Map<String, Object>) item);
-                } else if (item instanceof List) {
-                    serializeList(serializer, tagName, (List<?>) item);
+                } else if (item instanceof Collection) {
+                    serializeList(serializer, tagName, (Collection<?>) item);
+                } else if (item.getClass().isArray()) {
+                    serializeList(serializer, tagName, Collections.singletonList(item));
                 } else {
                     serializer.text(item.toString());
                 }

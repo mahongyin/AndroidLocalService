@@ -29,6 +29,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         //使用之前先初始化
         ALSHelper.init(this.applicationContext)
+        ALSHelper.configResponse("code", "msg", "data")
         //启动单个服务用法
         ALSHelper.startService(ServiceConfig(AndroidService::class.java))
         //启动多个服务用法
