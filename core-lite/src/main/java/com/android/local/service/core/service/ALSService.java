@@ -242,7 +242,7 @@ public class ALSService extends NanoHTTPD {
         return Response.newFixedLengthResponse(
                 Status.OK,
                 mimeTypes().get("json"),
-                ALSHelper.mapToJsonString(result)
+                ALSHelper.toJsonString(result)
         );
     }
 

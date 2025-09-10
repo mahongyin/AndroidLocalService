@@ -10,6 +10,8 @@ import com.android.local.service.core.ALSHelper;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,15 +37,20 @@ public class CustomResponse extends Exception {
     }
 
     public CustomResponse(Map<String, Object> response) {
-        super(response != null ? ALSHelper.mapToJsonString(response) : "{\"message\":\"实现自定义返回内容。但response为空\"}");
+        super(response != null ? ALSHelper.toJsonString(response) : "{\"message\":\"实现自定义返回内容。但response为空\"}");
     }
 
     public CustomResponse(List<?> response) {
-        super(response != null ? ALSHelper.listToJSONArray(response).toString() : "{\"message\":\"实现自定义返回内容。但response为空\"}");
+        super(response != null ? ALSHelper.toJsonString(response) : "{\"message\":\"实现自定义返回内容。但response为空\"}");
     }
 
     public CustomResponse(String response) {
         super(response);
+    }
+
+    public CustomResponse(Collection<?> response, String contentType) {
+        super(getResponse(response, contentType));
+        this.contentType = contentType;
     }
 
     public CustomResponse(Map<String, Object> response, String contentType) {
@@ -57,7 +64,7 @@ public class CustomResponse extends Exception {
     }
 
     public String getContentType() {
-//        1优先 header
+//        1优先 header 没有header就取contentType
         if (headers.containsKey("Content-Type")) {//会被header覆盖
             contentType = headers.get("Content-Type");
         }
@@ -65,7 +72,7 @@ public class CustomResponse extends Exception {
 //        if (TextUtils.isEmpty(contentType)){
 //            contentType = headers.get("Content-Type");
 //        }
-//        3默认
+//        3默认 contentType没填 则给默认值
         if (TextUtils.isEmpty(contentType)) {
             contentType = mimeTypes().get("json");
         }
@@ -84,18 +91,26 @@ public class CustomResponse extends Exception {
         return this.headers;
     }
 
+    private static String getResponse(Collection<?> response, String contentType) {
+        String res = "{\"message\":\"实现自定义返回内容。但response为空\"}";
+        if (contentType != null && contentType.contains("/xml")) {
+            return response != null ? ALSHelper.listToXml(response) : "<message>实现自定义返回内容。但response为空</message>";
+        } else {
+            return response != null ? ALSHelper.toJsonString(response) : res;
+        }
+    }
     private static String getResponse(Map<String, Object> response, String contentType) {
         String res = "{\"message\":\"实现自定义返回内容。但response为空\"}";
         if (contentType != null && contentType.contains("/xml")) {
             return response != null ? ALSHelper.mapToXml(response) : "<message>实现自定义返回内容。但response为空</message>";
         } else {
-            return response != null ? ALSHelper.mapToJsonString(response) : res;
+            return response != null ? ALSHelper.toJsonString(response) : res;
         }
     }
-
     private static String getResponse(String response, String contentType) {
         String res = "{\"message\":\"实现自定义返回内容。但response为空\"}";
         if (contentType != null && contentType.contains("/xml")) {
+            // response 自身为xml格式
             return response != null ? response : "<message>实现自定义返回内容。但response为空</message>";
         } else {
             return response != null ? response : res;

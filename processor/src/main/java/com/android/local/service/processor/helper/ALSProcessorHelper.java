@@ -37,7 +37,7 @@ public class ALSProcessorHelper {
     private static final String APPLICATION_JSON = "application/json";
     private static final String APPLICATION_XML = "/xml";
     private static final String MULTIPART_FORM_DATA = "multipart/form-data";
-
+    // 生成方法所用到的名称
     private static final String AFTER_PARAM_NAME = "contentType";
     private static final String FIRST_PARAM_NAME = "action";
     private static final String SECOND_PARAM_NAME = "paramsMap";
@@ -250,6 +250,7 @@ public class ALSProcessorHelper {
 
                 RequestHeader headerAnnotation = variableElement.getAnnotation(RequestHeader.class);
                 if (headerAnnotation != null && variableElement.getKind() == ElementKind.PARAMETER) {
+                    // 有header 获取header没有就捕获取
                     builder.addStatement("$T $N = $N", paramType, paramKey, REQUEST_HEADER_NAME);
                 } else {
                     builder.addStatement("String $N = $N.get($S)", paramKey, SECOND_PARAM_NAME, paramKey);

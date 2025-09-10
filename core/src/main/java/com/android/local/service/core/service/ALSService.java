@@ -247,7 +247,7 @@ public class ALSService extends NanoHTTPD {
                 }
             }
             for (Map.Entry<String, List<Map<String, Object>>> entry : filesInfo.entrySet()) {
-                result.put(entry.getKey(), ALSHelper.listToJSONArray(entry.getValue()).toString());
+                result.put(entry.getKey(), ALSHelper.toJsonString(entry.getValue()));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -311,7 +311,7 @@ public class ALSService extends NanoHTTPD {
         return Response.newFixedLengthResponse(
                 Status.OK,
                 mimeTypes().get("json"),
-                ALSHelper.mapToJsonString(result)
+                ALSHelper.toJsonString(result)
         );
     }
 

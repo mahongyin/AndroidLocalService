@@ -8,6 +8,8 @@ import com.android.local.service.annotation.ServicePort
 import com.android.local.service.annotation.UpFile
 import com.android.local.service.annotation.UpJson
 import com.android.local.service.annotation.UpXml
+import com.android.local.service.core.ALSHelper
+import com.android.local.service.core.data.ServiceInfo
 import com.android.local.service.core.e.CustomResponse
 import com.android.local.service.core.service.ALSService
 import com.android.local.service.demo.livedata.LiveDataHelper
@@ -20,7 +22,7 @@ abstract class PCService {
     fun getIndexFileName() = "test_page.html"
 
     @Request("saveXml")
-    fun saveXml(@RequestHeader() requestHeader: Map<String, String>, @UpXml xml2: String): String {
+    fun saveXml(@RequestHeader() requestHeader: Map<String, String>, @UpXml xml2: String): List<ServiceInfo> {
         // 很另类 使用主动抛出异常 实现自定义响应, contentType默认json
         val responseHeader = mapOf(
             //"Content-Type" to "application/xml",
@@ -28,10 +30,10 @@ abstract class PCService {
             "Access-Control-Allow-Methods" to "POST, GET, OPTIONS, DELETE, PUT, PATCH, HEAD",
             "Access-Control-Allow-Headers" to "Content-Type, Authorization, X-Requested-With",
         )
-        val customResponse = CustomResponse(responseHeader, ALSService.mimeTypes().get("xml"))
-        customResponse.headers = responseHeader
+        val customResponse = CustomResponse(ALSHelper.getServiceList(), ALSService.mimeTypes().get("xml"))
+        customResponse.headers = responseHeader //自定义响应头
         throw customResponse
-        return xml2;
+        return ALSHelper.getServiceList();
     }
 
     @Request("custom")
