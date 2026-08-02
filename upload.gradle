@@ -89,29 +89,38 @@ mavenPublishing {
 // 自动发布
 //../gradlew publishAndReleaseToMavenCentral
 // https://repo1.maven.org/maven2/io/github/1976222027/
-tasks.register("uploadMavenCentral"){
+tasks.register("uploadMavenCentral") {
     group = "publishing"
     description = "Uploads all archives to the remote Maven repository."
-    exec {
-        commandLine "../gradlew.bat", "publishToMavenCentral"
-        //commandLine "../gradlew", "publishToMavenCentral"
-
-        workingDir projectDir
-        errorOutput = System.err
-        standardOutput = System.out
-        setIgnoreExitValue(true)
+    doLast {
+        exec {
+            workingDir rootProject.projectDir
+            if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+                commandLine "cmd", "/c", "gradlew.bat", "publishToMavenCentral"
+            } else {
+                commandLine "./gradlew", "publishToMavenCentral"
+            }
+            errorOutput = System.err
+            standardOutput = System.out
+            setIgnoreExitValue(true)
+        }
     }
 }
 
-tasks.register("uploadAutoMavenCentral"){
+tasks.register("uploadAutoMavenCentral") {
     group = "publishing"
     description = "Uploads all archives to the remote Maven repository."
-    exec {
-        commandLine "../gradlew.bat", "publishAndReleaseToMavenCentral"
-        //commandLine "../gradlew", "publishAndReleaseToMavenCentral"
-        workingDir projectDir
-        errorOutput = System.err
-        standardOutput = System.out
-        setIgnoreExitValue(true)
+    doLast {
+        exec {
+            workingDir rootProject.projectDir
+            if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+                commandLine "cmd", "/c", "gradlew.bat", "publishAndReleaseToMavenCentral"
+            } else {
+                commandLine "./gradlew", "publishAndReleaseToMavenCentral"
+            }
+            errorOutput = System.err
+            standardOutput = System.out
+            setIgnoreExitValue(true)
+        }
     }
 }
