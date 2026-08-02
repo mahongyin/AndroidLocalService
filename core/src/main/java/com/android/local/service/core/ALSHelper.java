@@ -10,7 +10,6 @@ import com.android.local.service.core.data.ServiceConfig;
 import com.android.local.service.core.data.ServiceInfo;
 import com.android.local.service.core.i.IService;
 import com.android.local.service.core.service.ALSService;
-import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -205,7 +204,124 @@ public class ALSHelper {
 
     public static String toJsonString(Object object) {
         //JSONObject/JSONArray 的value包含实体类的没办法转换成json。。。。 用gson
-        return new Gson().toJson(object);
+        //return new com.google.gson.Gson().toJson(object);
+        if (object == null || object == JSONObject.NULL) {
+            return "{}";
+        }
+        if (object instanceof String) {
+            return "\"" + escapeJson((String) object) + "\"";
+        }
+        if (object instanceof Number || object instanceof Boolean) {
+            return object.toString();
+        }
+        if (object instanceof JSONObject) {
+            return jsonObjectToJsonString((JSONObject) object);
+        }
+        if (object instanceof JSONArray) {
+            return jsonArrayToJsonString((JSONArray) object);
+        }
+        if (object instanceof Map) {
+            return mapToJsonString((Map<?, ?>) object);
+        }
+        if (object instanceof Collection) {
+            return collectionToJsonString((Collection<?>) object);
+        }
+        if (object.getClass().isArray()) {
+            return arrayToJsonString((Object[]) object);
+        }
+        // 实体类：先转 Map 再转 JSON
+        return mapToJsonString(beanToMap(object));
+    }
+
+    private static String mapToJsonString(Map<?, ?> map) {
+        StringBuilder sb = new StringBuilder("{");
+        boolean first = true;
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            if (!first) sb.append(",");
+            sb.append("\"").append(escapeJson(String.valueOf(entry.getKey()))).append("\":");
+            sb.append(toJsonString(entry.getValue()));
+            first = false;
+        }
+        sb.append("}");
+        return sb.toString();
+    }
+
+    private static String collectionToJsonString(Collection<?> collection) {
+        StringBuilder sb = new StringBuilder("[");
+        boolean first = true;
+        for (Object item : collection) {
+            if (!first) sb.append(",");
+            sb.append(toJsonString(item));
+            first = false;
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    private static String arrayToJsonString(Object[] array) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < array.length; i++) {
+            if (i > 0) sb.append(",");
+            sb.append(toJsonString(array[i]));
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    private static String jsonObjectToJsonString(JSONObject jsonObject) {
+        StringBuilder sb = new StringBuilder("{");
+        Iterator<String> keys = jsonObject.keys();
+        boolean first = true;
+        while (keys.hasNext()) {
+            String key = keys.next();
+            if (!first) sb.append(",");
+            sb.append("\"").append(escapeJson(key)).append("\":");
+            try {
+                sb.append(toJsonString(jsonObject.get(key)));
+            } catch (JSONException e) {
+                sb.append("null");
+            }
+            first = false;
+        }
+        sb.append("}");
+        return sb.toString();
+    }
+
+    private static String jsonArrayToJsonString(JSONArray jsonArray) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < jsonArray.length(); i++) {
+            if (i > 0) sb.append(",");
+            try {
+                sb.append(toJsonString(jsonArray.get(i)));
+            } catch (JSONException e) {
+                sb.append("null");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    private static String escapeJson(String s) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '"':  sb.append("\\\""); break;
+                case '\\': sb.append("\\\\"); break;
+                case '\b': sb.append("\\b");  break;
+                case '\f': sb.append("\\f");  break;
+                case '\n': sb.append("\\n");  break;
+                case '\r': sb.append("\\r");  break;
+                case '\t': sb.append("\\t");  break;
+                default:
+                    if (c < 0x20) {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+            }
+        }
+        return sb.toString();
     }
 
     //实体类转 map
