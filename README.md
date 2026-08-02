@@ -3,7 +3,7 @@
 
 ### [**Demo下载体验**](https://www.pgyer.com/MLpo)
 
-0.1.3 json解析
+0.1.4 json解析
 0.1.0 Post请求:Query参数不要和form表单字段重复，甚至最好不要有Query。Query字段重复可能覆盖表单值
 0.0.9 支持自定义定义响应头
 0.0.8 支持自定义响应xml
