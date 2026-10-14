@@ -112,6 +112,7 @@ tasks.register("uploadAutoMavenCentral") {
     description = "Uploads all archives to the remote Maven repository."
     doLast {
         exec {
+            //workingDir projectDir
             workingDir rootProject.projectDir
             if (System.getProperty("os.name").toLowerCase().contains("windows")) {
                 commandLine "cmd", "/c", "gradlew.bat", "publishAndReleaseToMavenCentral"
