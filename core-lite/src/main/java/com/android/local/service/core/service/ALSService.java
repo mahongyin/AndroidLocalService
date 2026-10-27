@@ -116,7 +116,7 @@ public class ALSService extends NanoHTTPD {
                 e.printStackTrace();
             }
         }
-
+        // 获取请求路径，去掉前面的斜杠
         String action = uri != null ? uri.substring(1) : null;
         if (action == null) {
             return wrapResponse(session, fileNotFoundResponse());
