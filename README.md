@@ -2,7 +2,8 @@
 本项目基于lygttpod扩展，增加了兼容文件上传multipart/form-data 和 application/json\xml
 
 ### [**Demo下载体验**](https://www.pgyer.com/MLpo)
-
+0.1.6 支持文件返回  support kapt or ksp
+0.1.5 miniSdk16
 0.1.4 json解析
 0.1.0 Post请求:Query参数不要和form表单字段重复，甚至最好不要有Query。Query字段重复可能覆盖表单值
 0.0.9 支持自定义定义响应头
@@ -14,10 +15,10 @@
 1. 添加依赖
 
 ```groovy
-    implementation 'io.github.mahongyin.android-local-service:core-lite:0.0.8' //不支持上传文件，够用
-    implementation 'io.github.mahongyin.android-local-service:core:0.0.8'
-    implementation 'io.github.mahongyin.android-local-service:annotation:0.0.8'
-    kapt 'io.github.mahongyin.android-local-service:processor:0.0.8'
+    implementation 'io.github.mahongyin.android-local-service:core-lite:0.1.6' //不支持上传文件，够用
+    implementation 'io.github.mahongyin.android-local-service:core:0.1.6'
+    implementation 'io.github.mahongyin.android-local-service:annotation:0.1.6' //上面2个都已包含
+    kapt 'io.github.mahongyin.android-local-service:processor:0.1.6'
 ```
 
 2. 创建本地服务（具体效果可以看项目demo） 定义如下类
@@ -26,10 +27,13 @@
    //@Service标记这是一个服务，端口号是服务器的端口号，注意端口号唯一
 @Service(port = 2222)
 abstract class AndroidService {
-
+    
+    @RequestFile("getJson")
+    fun getJsonFileName() = "content://com.example.androidlocalserver/files/json" // 文件路径Uri
+    
     //@Page标注页面类，打开指定h5页面
     @Page("index")
-    fun getIndexFileName() = "test_page.html"
+    fun getIndexFileName() = "test_page.html" // assets目录下的文件路径
 
     //@Request注解在方法上边
     @Request("query")

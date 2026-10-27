@@ -1,5 +1,6 @@
 package com.android.local.service.processor.helper;
 
+import com.android.local.service.annotation.RequestFile;
 import com.android.local.service.annotation.Page;
 import com.android.local.service.annotation.Request;
 import com.android.local.service.annotation.RequestHeader;
@@ -80,7 +81,10 @@ public class ALSProcessorHelper {
             String name = key.toString();
             String packageName = name.substring(0, name.lastIndexOf("."));
             ServicePort servicePort = typeElement.getAnnotation(ServicePort.class);
-            int port = servicePort.port();
+            int port = 0;
+            if (servicePort != null) {
+                port = servicePort.port();
+            }
             builder = TypeSpec.classBuilder(className)
                     .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
                     .superclass(ClassName.get(packageName, simpleName))
@@ -215,8 +219,29 @@ public class ALSProcessorHelper {
         String methodName = element.getSimpleName().toString();
         log("《Page注解》修饰的方法名称：" + methodName);
         Page page = element.getAnnotation(Page.class);
-        String value = page.value();
+        String value = null;
+        if (page != null) {
+            value = page.value();
+        }
         log("《Page注解》内的值：" + value);
+        builder.beginControlFlow("if (action.equals($S))", value);
+        builder.addStatement("return realService.assetsSuccess($N$N)", methodName, "()");
+        builder.endControlFlow();
+    }
+
+    public void processFile(ExecutableElement element) {
+        TypeElement typeElement = (TypeElement) element.getEnclosingElement();
+        createTypeSpecBuilder(typeElement);
+        MethodSpec.Builder builder = createOrGetMethodSpecBuilder(typeElement);
+
+        String methodName = element.getSimpleName().toString();
+        log("《File注解》修饰的方法名称：" + methodName);
+        RequestFile filePath = element.getAnnotation(RequestFile.class);
+        String value = null;
+        if (filePath != null) {
+            value = filePath.value();
+        }
+        log("《File注解》内的值：" + value);
         builder.beginControlFlow("if (action.equals($S))", value);
         builder.addStatement("return realService.fileSuccess($N$N)", methodName, "()");
         builder.endControlFlow();
@@ -228,12 +253,15 @@ public class ALSProcessorHelper {
         MethodSpec.Builder builder = createOrGetMethodSpecBuilder(typeElement);
         String methodName = element.getSimpleName().toString();
         Request request = element.getAnnotation(Request.class);
-        String value = request.value();
+        String value = null;
+        if (request != null) {
+            value = request.value();
+        }
         builder.beginControlFlow("if (action.equals($S))", value);
 
-        log("《Get注解》修饰的方法名：" + methodName);
-        log("《Get注解》内的值：" + value);
-        log("《Get注解》修饰的方法的返回值类型：" + element.getReturnType());
+        log("《Request注解》修饰的方法名：" + methodName);
+        log("《Request注解》内的值：" + value);
+        log("《Request注解》修饰的方法的返回值类型：" + element.getReturnType());
         // 进程安全
         StringBuffer stringBuffer = new StringBuffer();
         //拼接方法参数
@@ -246,7 +274,7 @@ public class ALSProcessorHelper {
             for (VariableElement variableElement : params) {
                 String paramKey = variableElement.getSimpleName().toString();
                 TypeMirror paramType = variableElement.asType();
-                log("《Get注解》Param参数 key = " + paramKey + "-----paramType = " + paramType);
+                log("《Request注解》Param参数 key = " + paramKey + "-----paramType = " + paramType);
 
                 RequestHeader headerAnnotation = variableElement.getAnnotation(RequestHeader.class);
                 if (headerAnnotation != null && variableElement.getKind() == ElementKind.PARAMETER) {

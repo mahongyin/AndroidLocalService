@@ -2,6 +2,7 @@ package com.android.local.service.processor;
 
 import com.android.local.service.annotation.Page;
 import com.android.local.service.annotation.Request;
+import com.android.local.service.annotation.RequestFile;
 import com.android.local.service.annotation.RequestHeader;
 import com.android.local.service.annotation.ServicePort;
 import com.android.local.service.annotation.UpFile;
@@ -49,6 +50,7 @@ public class ALSProcessor extends AbstractProcessor {
         annotationTypes.add(UpJson.class.getCanonicalName());
         annotationTypes.add(UpXml.class.getCanonicalName());
         annotationTypes.add(RequestHeader.class.getCanonicalName());
+        annotationTypes.add(RequestFile.class.getCanonicalName());
         return annotationTypes;
     }
 
@@ -68,6 +70,8 @@ public class ALSProcessor extends AbstractProcessor {
                         alsProcessorHelper.processPage((ExecutableElement) element);
                     } else if (Request.class.getName().equals(annotationClassName)) {
                         alsProcessorHelper.processRequest((ExecutableElement) element);
+                    } else if (RequestFile.class.getName().equals(annotationClassName)) {
+                        alsProcessorHelper.processFile((ExecutableElement) element);
                     }
                 } else if (element instanceof VariableElement) {//参数
                     //alsProcessorHelper.processParam((VariableElement) element);

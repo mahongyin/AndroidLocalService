@@ -1,7 +1,14 @@
 package com.android.local.service.demo
 
+import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import com.android.local.service.core.ALSHelper
 import com.android.local.service.core.data.ServiceConfig
 import com.android.local.service.databinding.ActivityMainBinding
@@ -44,12 +51,34 @@ class MainActivity : AppCompatActivity() {
         initView()
         pcServiceDemoTip()
         initObserver()
+//        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE), 1000)
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+//            if (Environment.isExternalStorageManager()) {
+//                // 已经授予「所有文件访问」权限
+//                return
+//            }
+//            try {
+//                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+//                    data = Uri.parse("package:$packageName")
+//                }
+//                startActivityForResult(intent, 1001)
+//            } catch (e: Exception) {
+//                // 部分 ROM 不支持按包名定位，退回通用设置页
+//                val fallback = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+//                startActivityForResult(fallback, 1001)
+//            }
+//        }
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        finish()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         // 可选
-        //ALSHelper.stopAllServices()
+        ALSHelper.stopAllServices()
     }
     private fun pcServiceDemoTip() {
         val pcBaseUrl = "http://${ipAddress}:${pcServicePort}"
@@ -120,4 +149,5 @@ class MainActivity : AppCompatActivity() {
             }
         })
     }
+
 }

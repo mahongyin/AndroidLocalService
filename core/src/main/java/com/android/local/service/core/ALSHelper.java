@@ -3,6 +3,7 @@ package com.android.local.service.core;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.net.Uri;
 import android.util.Log;
 import android.util.Xml;
 
@@ -19,6 +20,7 @@ import org.xmlpull.v1.XmlSerializer;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -40,6 +42,10 @@ public class ALSHelper {
         ALSHelper.context = appContext;
     }
 
+    public static Context getContext() {
+        return context;
+    }
+
     /**
      * 配置返回数据结构字段名，可空【即没有这个字段】 int code, string message, object data
      */
@@ -56,7 +62,7 @@ public class ALSHelper {
     }
 
     public static AssetManager getAssetManager() {
-        if (context == null) return null;
+        if (context == null) throw new RuntimeException("请先调用init方法");
         return context.getAssets();
     }
 
@@ -470,6 +476,17 @@ public class ALSHelper {
         }
 
         return sb.toString();
+    }
+
+    public static InputStream getInputStreamFromUri(Uri uri) {
+        if (context == null) throw new RuntimeException("请先调用init方法");
+        if (uri == null) return null;
+        try {
+            return context.getContentResolver().openInputStream(uri);
+        } catch (Exception e) {
+            Log.d(TAG, "getInputStreamFromUri获取输入流失败：" + e.getMessage());
+            return null;
+        }
     }
 }
 

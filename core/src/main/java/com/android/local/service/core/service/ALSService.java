@@ -1,6 +1,8 @@
 package com.android.local.service.core.service;
 
 import android.content.res.AssetManager;
+import android.net.Uri;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.local.service.core.ALSHelper;
@@ -315,19 +317,33 @@ public class ALSService extends NanoHTTPD {
         );
     }
 
-    private Response fileResponse(String fileName) {
-        AssetManager assetManager = ALSHelper.getAssetManager();
-        if (assetManager == null) {
+    private Response fileResponse(Uri uri, String fileName) {
+        if (null == uri || TextUtils.isEmpty(fileName)) {
             return fileNotFoundResponse();
         }
+        InputStream stream = ALSHelper.getInputStreamFromUri(uri);
+        if (stream != null){
+            String extension = getFileExtensionName(fileName);
+            return Response.newChunkedResponse(Status.OK, mimeTypes().get(extension), stream);
+        } else {
+            Log.e(TAG, "FileStream is null. ");
+            return fileNotFoundResponse();
+        }
+    }
+
+    private Response assetsResponse(String fileName) {
         try {
+            if (TextUtils.isEmpty(fileName)){
+                throw new IOException("fileName is empty");
+            }
+            AssetManager assetManager = ALSHelper.getAssetManager();
             InputStream stream = assetManager.open(fileName);
             String extension = getFileExtensionName(fileName);
             return Response.newChunkedResponse(Status.OK, mimeTypes().get(extension), stream);
         } catch (IOException e) {
             e.printStackTrace();
             Log.e(TAG, "File not exist. " + fileName);
-            return fileError();
+            return fileNotFoundResponse();
         }
     }
 
@@ -359,12 +375,16 @@ public class ALSService extends NanoHTTPD {
         return jsonResponse(500, "unknow request path, please check it", null);
     }
 
-    public Response fileSuccess(String fileName) {
-        return fileResponse(fileName);
+    public Response fileSuccess(File file) {
+        if (file == null) {
+            return fileNotFoundResponse();
+        }
+        //仅适用于本应用内部使用，外部调用请使用FileProvider方式
+        return fileResponse(Uri.fromFile(file), file.getName());
     }
 
-    public Response fileError() {
-        return fileNotFoundResponse();
+    public Response assetsSuccess(String fileName) {
+        return assetsResponse(fileName);
     }
 
 }

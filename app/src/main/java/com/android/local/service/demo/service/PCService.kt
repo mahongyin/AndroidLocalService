@@ -1,8 +1,13 @@
 package com.android.local.service.demo.service
 
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import androidx.core.content.FileProvider
 import com.android.local.service.BuildConfig
 import com.android.local.service.annotation.Page
 import com.android.local.service.annotation.Request
+import com.android.local.service.annotation.RequestFile
 import com.android.local.service.annotation.RequestHeader
 import com.android.local.service.annotation.ServicePort
 import com.android.local.service.annotation.UpFile
@@ -13,10 +18,16 @@ import com.android.local.service.core.data.ServiceInfo
 import com.android.local.service.core.e.CustomResponse
 import com.android.local.service.core.service.ALSService
 import com.android.local.service.demo.livedata.LiveDataHelper
+import java.io.File
 import java.util.UUID
 
 @ServicePort(port = 2222)
 abstract class PCService {
+    @RequestFile("getJson")
+    fun getJsonFileName() : File {
+        return File(ALSHelper.getContext().getExternalFilesDir(null), "test.json")
+//        return File(Environment.getExternalStorageDirectory(), "test.json") //需要权限
+    }
 
     @Page("index")
     fun getIndexFileName() = "test_page.html"
