@@ -19,3 +19,11 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# okhttp 里对可选 TLS 实现的引用，R8 会报 Missing class，忽略即可
+-dontwarn org.bouncycastle.**
+-dontwarn org.conscrypt.**
+-dontwarn org.openjsse.**
+
+# KSP 生成的 ALS_XXX 包装类是通过反射（Class.forName）实例化的，不能被混淆/裁剪
+-keep class **.ALS_* { *; }
