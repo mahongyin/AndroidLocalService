@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 public class ALSService extends NanoHTTPD {
 
@@ -37,14 +38,46 @@ public class ALSService extends NanoHTTPD {
     public static String DATA_NAME = "data";
     private RequestListener requestListener;
     private FileUpload upload;
+    private int port;
+    private SseServer sseServer;
 
     public ALSService(int port) {
         super(port);
+        this.port = port;
+    }
+
+    @Override
+    public void stop() {
+        super.stop();
+        if (sseServer != null) {
+            sseServer.stop();
+        }
     }
 
     private void initUpFile() {
         DiskFileItemFactory factory = new DiskFileItemFactory();
         upload = new FileUpload(factory);
+    }
+
+    public Response initSSE(SseServer.SseListener sseListener, IHTTPSession session) {
+        if (sseServer == null) {
+            sseServer = new SseServer(port);
+            sseServer
+                    //.setHeartbeatInterval(15000)
+                    //.setRetry(3000)
+                    .setMaxThreads(32);
+            try {
+                sseServer.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        String clientId = session.getCookies().read("Event-CLIENT-ID");
+        if (TextUtils.isEmpty(clientId)) {
+            clientId = UUID.randomUUID().toString();
+        }
+        // sseServer.addSseListener(clientId, sseListener);
+        return sseServer.serve(session, clientId, sseListener);
     }
 
     public void setRequestListener(RequestListener listener) {
@@ -125,7 +158,7 @@ public class ALSService extends NanoHTTPD {
         if (requestListener != null) {
             Map<String, String> headerMap = session.getHeaders();
             Map<String, String> bodyMap = params != null ? params : new HashMap<>();
-            response = requestListener.onRequest(action, contentType, headerMap, bodyMap);
+            response = requestListener.onRequest(session, action, contentType, headerMap, bodyMap);
         } else {
             throw new RuntimeException("setRequestListener 方法没有设置");
         }
@@ -322,7 +355,7 @@ public class ALSService extends NanoHTTPD {
             return fileNotFoundResponse();
         }
         InputStream stream = ALSHelper.getInputStreamFromUri(uri);
-        if (stream != null){
+        if (stream != null) {
             String extension = getFileExtensionName(fileName);
             return Response.newChunkedResponse(Status.OK, mimeTypes().get(extension), stream);
         } else {
@@ -333,7 +366,7 @@ public class ALSService extends NanoHTTPD {
 
     private Response assetsResponse(String fileName) {
         try {
-            if (TextUtils.isEmpty(fileName)){
+            if (TextUtils.isEmpty(fileName)) {
                 throw new IOException("fileName is empty");
             }
             AssetManager assetManager = ALSHelper.getAssetManager();

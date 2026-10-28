@@ -1,14 +1,11 @@
 package com.android.local.service.demo.service
 
-import android.net.Uri
-import android.os.Build
-import android.os.Environment
-import androidx.core.content.FileProvider
 import com.android.local.service.BuildConfig
 import com.android.local.service.annotation.Page
 import com.android.local.service.annotation.Request
-import com.android.local.service.annotation.RequestFile
+import com.android.local.service.annotation.PageFile
 import com.android.local.service.annotation.RequestHeader
+import com.android.local.service.annotation.RequestSSE
 import com.android.local.service.annotation.ServicePort
 import com.android.local.service.annotation.UpFile
 import com.android.local.service.annotation.UpJson
@@ -17,13 +14,50 @@ import com.android.local.service.core.ALSHelper
 import com.android.local.service.core.data.ServiceInfo
 import com.android.local.service.core.e.CustomResponse
 import com.android.local.service.core.service.ALSService
+import com.android.local.service.core.service.SseServer
 import com.android.local.service.demo.livedata.LiveDataHelper
+import org.nanohttpd.protocols.http.IHTTPSession
 import java.io.File
 import java.util.UUID
 
 @ServicePort(port = 2222)
 abstract class PCService {
-    @RequestFile("getJson")
+    @RequestSSE("sseTest")
+    fun sse(content: String) : SseServer.SseListener {
+        return object : SseServer.SseListener {
+            override fun onOpen(sseServer: SseServer?, clientId: String?, session: IHTTPSession?) {
+                sseServer?.send(clientId, getSseMsg(clientId, "单播1 "+content))
+                sseServer?.send(clientId, getSseMsg(clientId, "单播2 "+content))
+                sseServer?.send(clientId, getSseMsg(clientId, "单播3 "+content))
+                sseServer?.sendDone(clientId)
+//                sseServer?.stop(clientId)//如果不关，他就可以将继续接收消息 还能接收广播
+            }
+
+            override fun onClose(sseServer: SseServer?, clientId: String?) {
+
+            }
+        }
+    }
+    @RequestSSE("ssePush")
+    fun ssePush(content: String) : SseServer.SseListener {
+        return object : SseServer.SseListener {
+            override fun onOpen(sseServer: SseServer?, clientId: String?, session: IHTTPSession?) {
+                sseServer?.broadcast(getSseMsg(clientId, "广播 "+content))
+                sseServer?.broadcastDone()
+                sseServer?.stop(clientId)
+            }
+
+            override fun onClose(sseServer: SseServer?, clientId: String?) {
+
+            }
+        }
+    }
+    private fun getSseMsg(clientId: String?, word: String):String {
+        return word
+        //return "{\"code\":0,\"message\":\"Success\",\"sid\":\"${clientId}\",\"id\":\"${clientId}\",\"created\":${System.currentTimeMillis() / 1000},\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"${word}\"},\"index\":0}]}"
+    }
+
+    @PageFile("getJson")
     fun getJsonFileName() : File {
         return File(ALSHelper.getContext().getExternalFilesDir(null), "test.json")
 //        return File(Environment.getExternalStorageDirectory(), "test.json") //需要权限

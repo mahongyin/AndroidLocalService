@@ -2,7 +2,7 @@
 本项目基于lygttpod扩展，增加了兼容文件上传multipart/form-data 和 application/json\xml
 
 ### [**Demo下载体验**](https://www.pgyer.com/MLpo)
-0.1.6 支持文件返回  support kapt or ksp
+0.1.6 支持文件返回  support sse
 0.1.5 miniSdk16
 0.1.4 json解析
 0.1.0 Post请求:Query参数不要和form表单字段重复，甚至最好不要有Query。Query字段重复可能覆盖表单值
@@ -28,7 +28,7 @@
 @Service(port = 2222)
 abstract class AndroidService {
     
-    @RequestFile("getJson")
+    @PageFile("getJson")
     fun getJsonFileName() = "content://com.example.androidlocalserver/files/json" // 文件路径Uri
     
     //@Page标注页面类，打开指定h5页面

@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 public class ALSService extends NanoHTTPD {
 
@@ -31,9 +32,41 @@ public class ALSService extends NanoHTTPD {
     public static String CODE_NAME = "code";
     public static String MESSAGE_NAME = "message";
     public static String DATA_NAME = "data";
+    private int port;
+    private SseServer sseServer;
 
     public ALSService(int port) {
         super(port);
+        this.port = port;
+    }
+
+    @Override
+    public void stop() {
+        super.stop();
+        if (sseServer != null) {
+            sseServer.stop();
+        }
+    }
+
+    public Response initSSE(SseServer.SseListener sseListener, IHTTPSession session) {
+        if (sseServer == null) {
+            sseServer = new SseServer(port);
+            sseServer
+                    //.setHeartbeatInterval(15000)
+                    //.setRetry(3000)
+                    .setMaxThreads(32);
+            try {
+                sseServer.start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        String clientId = session.getCookies().read("Event-CLIENT-ID");
+        if (TextUtils.isEmpty(clientId)) {
+            clientId = UUID.randomUUID().toString();
+        }
+        // sseServer.addSseListener(clientId, sseListener);
+        return sseServer.serve(session, clientId, sseListener);
     }
 
     public void setRequestListener(RequestListener listener) {
@@ -128,7 +161,7 @@ public class ALSService extends NanoHTTPD {
         if (requestListener != null) {
             Map<String, String> headerMap = session.getHeaders();
             Map<String, String> bodyMap = params != null ? params : new HashMap<>();
-            response = requestListener.onRequest(action, contentType, headerMap, bodyMap);
+            response = requestListener.onRequest(session, action, contentType, headerMap, bodyMap);
         } else {
             throw new RuntimeException("setRequestListener 方法没有设置");
         }
