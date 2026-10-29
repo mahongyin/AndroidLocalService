@@ -36,6 +36,7 @@ dependencyResolutionManagement {
 rootProject.name = "AndroidLocalService"
 include(":app")
 include(":annotation")
+include(":processor")
 include(":ksp-processor")
 include(":core")
 include(":core-lite")
