@@ -8,7 +8,7 @@ java {
 }
 
 dependencies {
-//    implementation(project(":annotation"))
+    implementation(project(":annotation"))
     implementation("com.squareup:javapoet:1.13.0")
 }
 

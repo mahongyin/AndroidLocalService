@@ -1,5 +1,6 @@
 package com.android.local.service.processor;
 
+import com.android.local.service.processor.helper.ALSAnnotation;
 import com.android.local.service.processor.helper.ALSProcessorHelper;
 import com.google.devtools.ksp.processing.Resolver;
 import com.google.devtools.ksp.processing.SymbolProcessor;
@@ -15,16 +16,11 @@ import java.util.List;
 /**
  * KSP 注解处理器：扫描 @ServicePort / @Request / @RequestSSE / @Page / @PageFile，
  * 为对应的服务类生成 ALS_XXX 包装类。
+ * <p>
+ * 注解身份一律用全限定名（{@link ALSAnnotation}，直接来自注解类）比较，
+ * 既避免同名注解串号，也保证注解改名时本模块编译失败而不是静默失效。
  */
 public class ALSProcessor implements SymbolProcessor {
-
-    private static final String ANNOTATION_PACKAGE = "com.android.local.service.annotation.";
-
-    private static final String SERVICE_PORT = ANNOTATION_PACKAGE + "ServicePort";
-    private static final String REQUEST = ANNOTATION_PACKAGE + "Request";
-    private static final String REQUEST_SSE = ANNOTATION_PACKAGE + "RequestSSE";
-    private static final String PAGE_FILE = ANNOTATION_PACKAGE + "PageFile";
-    private static final String PAGE = ANNOTATION_PACKAGE + "Page";
 
     private final ALSProcessorHelper helper;
     private boolean generated = false;
@@ -39,31 +35,31 @@ public class ALSProcessor implements SymbolProcessor {
         if (!generated) {
             generated = true;
 
-            forEachSourceSymbol(resolver, SERVICE_PORT, symbol -> {
+            forEachSourceSymbol(resolver, ALSAnnotation.SERVICE_PORT, symbol -> {
                 if (symbol instanceof KSClassDeclaration) {
                     helper.processService((KSClassDeclaration) symbol);
                 }
             });
 
-            forEachSourceSymbol(resolver, REQUEST, symbol -> {
+            forEachSourceSymbol(resolver, ALSAnnotation.REQUEST, symbol -> {
                 if (symbol instanceof KSFunctionDeclaration) {
                     helper.processRequest((KSFunctionDeclaration) symbol);
                 }
             });
 
-            forEachSourceSymbol(resolver, REQUEST_SSE, symbol -> {
+            forEachSourceSymbol(resolver, ALSAnnotation.REQUEST_SSE, symbol -> {
                 if (symbol instanceof KSFunctionDeclaration) {
                     helper.processSSE((KSFunctionDeclaration) symbol);
                 }
             });
 
-            forEachSourceSymbol(resolver, PAGE_FILE, symbol -> {
+            forEachSourceSymbol(resolver, ALSAnnotation.PAGE_FILE, symbol -> {
                 if (symbol instanceof KSFunctionDeclaration) {
                     helper.processFile((KSFunctionDeclaration) symbol);
                 }
             });
 
-            forEachSourceSymbol(resolver, PAGE, symbol -> {
+            forEachSourceSymbol(resolver, ALSAnnotation.PAGE, symbol -> {
                 if (symbol instanceof KSFunctionDeclaration) {
                     helper.processPage((KSFunctionDeclaration) symbol);
                 }
@@ -77,8 +73,9 @@ public class ALSProcessor implements SymbolProcessor {
     /**
      * 只处理当前模块源码中的符号；依赖库里的声明不生成代码
      */
-    private void forEachSourceSymbol(Resolver resolver, String annotationName, SymbolHandler handler) {
-        java.util.Iterator<KSAnnotated> iterator = resolver.getSymbolsWithAnnotation(annotationName, false).iterator();
+    private void forEachSourceSymbol(Resolver resolver, String annotationQualifiedName, SymbolHandler handler) {
+        java.util.Iterator<KSAnnotated> iterator =
+                resolver.getSymbolsWithAnnotation(annotationQualifiedName, false).iterator();
         while (iterator.hasNext()) {
             KSAnnotated symbol = iterator.next();
             // 只处理当前模块源码中的声明，跳过 classpath 里依赖库的符号

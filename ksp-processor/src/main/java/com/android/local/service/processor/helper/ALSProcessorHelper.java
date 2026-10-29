@@ -69,16 +69,6 @@ public class ALSProcessorHelper {
 
     private static final String INIT_METHOD_NAME = "init";
 
-    private static final String SERVICE_PORT_ANNOTATION = "ServicePort";
-    private static final String REQUEST_ANNOTATION = "Request";
-    private static final String REQUEST_SSE_ANNOTATION = "RequestSSE";
-    private static final String PAGE_ANNOTATION = "Page";
-    private static final String PAGE_FILE_ANNOTATION = "PageFile";
-    private static final String REQUEST_HEADER_ANNOTATION = "RequestHeader";
-    private static final String UP_FILE_ANNOTATION = "UpFile";
-    private static final String UP_JSON_ANNOTATION = "UpJson";
-    private static final String UP_XML_ANNOTATION = "UpXml";
-
     private static final String DEFAULT_UP_FILE_MESSAGE = "@使用UpFile注解的参数类型必须为String";
     private static final String DEFAULT_UP_JSON_MESSAGE = "@使用UpJson注解的参数类型必须为String";
     private static final String DEFAULT_UP_XML_MESSAGE = "@使用UpXml注解的参数类型必须为String";
@@ -103,7 +93,7 @@ public class ALSProcessorHelper {
         String simpleName = classDeclaration.getSimpleName().asString();
         String className = AUTO_CREATE_CLASS_PREFIX + simpleName;
         String packageName = KspUtils.packageNameOf(key);
-        int port = KspUtils.annotationInt(classDeclaration, SERVICE_PORT_ANNOTATION, "port", 0);
+        int port = KspUtils.annotationInt(classDeclaration, ALSAnnotation.SERVICE_PORT, "port", 0);
 
         TypeSpec.Builder builder = TypeSpec.classBuilder(className)
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
@@ -250,7 +240,7 @@ public class ALSProcessorHelper {
         MethodSpec.Builder builder = createOrGetMethodSpecBuilder(classDeclaration);
 
         String methodName = function.getSimpleName().asString();
-        String value = KspUtils.annotationString(function, PAGE_ANNOTATION, "value");
+        String value = KspUtils.annotationString(function, ALSAnnotation.PAGE, "value");
         builder.beginControlFlow("if (action.equals($S))", value);
         builder.addStatement("return $N.assetsSuccess($N())", SERVICE_FIELD_NAME, methodName);
         builder.endControlFlow();
@@ -265,7 +255,7 @@ public class ALSProcessorHelper {
         MethodSpec.Builder builder = createOrGetMethodSpecBuilder(classDeclaration);
 
         String methodName = function.getSimpleName().asString();
-        String value = KspUtils.annotationString(function, PAGE_FILE_ANNOTATION, "value");
+        String value = KspUtils.annotationString(function, ALSAnnotation.PAGE_FILE, "value");
         builder.beginControlFlow("if (action.equals($S))", value);
         builder.addStatement("return $N.fileSuccess($N())", SERVICE_FIELD_NAME, methodName);
         builder.endControlFlow();
@@ -280,7 +270,7 @@ public class ALSProcessorHelper {
         MethodSpec.Builder builder = createOrGetMethodSpecBuilder(classDeclaration);
 
         String methodName = function.getSimpleName().asString();
-        String value = KspUtils.annotationString(function, REQUEST_SSE_ANNOTATION, "value");
+        String value = KspUtils.annotationString(function, ALSAnnotation.REQUEST_SSE, "value");
         builder.beginControlFlow("if (action.equals($S))", value);
         CodeBlock parameters = createParamStatements(builder, function);
         builder.addStatement("return $N.initSSE($N($L), $N)", SERVICE_FIELD_NAME, methodName, parameters, I_HTTP_SESSION_NAME);
@@ -296,7 +286,7 @@ public class ALSProcessorHelper {
         MethodSpec.Builder builder = createOrGetMethodSpecBuilder(classDeclaration);
 
         String methodName = function.getSimpleName().asString();
-        String value = KspUtils.annotationString(function, REQUEST_ANNOTATION, "value");
+        String value = KspUtils.annotationString(function, ALSAnnotation.REQUEST, "value");
         builder.beginControlFlow("if (action.equals($S))", value);
         CodeBlock parameters = createParamStatements(builder, function);
 
@@ -329,19 +319,19 @@ public class ALSProcessorHelper {
             KSType paramType = parameter.getType().resolve();
             String paramTypeString = KspUtils.typeString(paramType);
 
-            boolean isHeader = KspUtils.hasAnnotation(parameter, REQUEST_HEADER_ANNOTATION);
-            boolean isUpFile = KspUtils.hasAnnotation(parameter, UP_FILE_ANNOTATION);
-            boolean isUpJson = KspUtils.hasAnnotation(parameter, UP_JSON_ANNOTATION);
-            boolean isUpXml = KspUtils.hasAnnotation(parameter, UP_XML_ANNOTATION);
+            boolean isHeader = KspUtils.hasAnnotation(parameter, ALSAnnotation.REQUEST_HEADER);
+            boolean isUpFile = KspUtils.hasAnnotation(parameter, ALSAnnotation.UP_FILE);
+            boolean isUpJson = KspUtils.hasAnnotation(parameter, ALSAnnotation.UP_JSON);
+            boolean isUpXml = KspUtils.hasAnnotation(parameter, ALSAnnotation.UP_XML);
 
             if (isUpFile) {
-                validateStringParam(parameter, UP_FILE_ANNOTATION, DEFAULT_UP_FILE_MESSAGE);
+                validateStringParam(parameter, ALSAnnotation.UP_FILE, DEFAULT_UP_FILE_MESSAGE);
             }
             if (isUpJson) {
-                validateStringParam(parameter, UP_JSON_ANNOTATION, DEFAULT_UP_JSON_MESSAGE);
+                validateStringParam(parameter, ALSAnnotation.UP_JSON, DEFAULT_UP_JSON_MESSAGE);
             }
             if (isUpXml) {
-                validateStringParam(parameter, UP_XML_ANNOTATION, DEFAULT_UP_XML_MESSAGE);
+                validateStringParam(parameter, ALSAnnotation.UP_XML, DEFAULT_UP_XML_MESSAGE);
             }
 
             if (isHeader) {
@@ -379,37 +369,30 @@ public class ALSProcessorHelper {
         return arguments.build();
     }
 
-    private void validateStringParam(KSValueParameter parameter, String annotationShortName, String defaultMessage) {
-        KSType type = parameter.getType().resolve();
-        String qualifiedName = KspUtils.qualifiedNameOf(type.getDeclaration());
-        if (!"kotlin.String".equals(qualifiedName) && !"java.lang.String".equals(qualifiedName)) {
-            String message = KspUtils.annotationString(parameter, annotationShortName, "message");
+    private void validateStringParam(KSValueParameter parameter, String annotationQualifiedName, String defaultMessage) {
+        if (!KspUtils.isStringType(parameter.getType().resolve())) {
+            String message = KspUtils.annotationString(parameter, annotationQualifiedName, "message");
             logger.error(message == null ? defaultMessage : message, parameter);
         }
     }
 
     private void validateHeaderParam(KSValueParameter parameter) {
         KSType type = parameter.getType().resolve();
-        String qualifiedName = KspUtils.qualifiedNameOf(type.getDeclaration());
-        boolean isMap = "kotlin.collections.Map".equals(qualifiedName)
-                || "kotlin.collections.MutableMap".equals(qualifiedName)
-                || "java.util.Map".equals(qualifiedName);
         List<KSTypeArgument> typeArguments = type.getArguments();
         boolean isStringKeyValue = typeArguments.size() == 2
-                && isStringType(typeArguments.get(0))
-                && isStringType(typeArguments.get(1));
-        if (!isMap || !isStringKeyValue) {
-            String message = KspUtils.annotationString(parameter, REQUEST_HEADER_ANNOTATION, "message");
+                && isStringTypeArgument(typeArguments.get(0))
+                && isStringTypeArgument(typeArguments.get(1));
+        if (!KspUtils.isMapType(type) || !isStringKeyValue) {
+            String message = KspUtils.annotationString(parameter, ALSAnnotation.REQUEST_HEADER, "message");
             logger.error(message == null ? DEFAULT_REQUEST_HEADER_MESSAGE : message, parameter);
         }
     }
 
-    private boolean isStringType(KSTypeArgument typeArgument) {
+    private boolean isStringTypeArgument(KSTypeArgument typeArgument) {
         if (typeArgument.getType() == null) {
             return false;
         }
-        String qualifiedName = KspUtils.qualifiedNameOf(typeArgument.getType().resolve().getDeclaration());
-        return "kotlin.String".equals(qualifiedName) || "java.lang.String".equals(qualifiedName);
+        return KspUtils.isStringType(typeArgument.getType().resolve());
     }
 
     private boolean isUnitReturnType(KSFunctionDeclaration function) {
@@ -417,8 +400,7 @@ public class ALSProcessorHelper {
         if (returnType == null) {
             return true;
         }
-        String qualifiedName = KspUtils.qualifiedNameOf(returnType.resolve().getDeclaration());
-        return "kotlin.Unit".equals(qualifiedName);
+        return KspUtils.isTypeOneOf(returnType.resolve(), KspUtils.KOTLIN_UNIT);
     }
 
     private KSClassDeclaration parentClassOf(KSFunctionDeclaration function) {
