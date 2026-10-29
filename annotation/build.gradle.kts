@@ -1,5 +1,5 @@
 plugins {
-    id 'java-library'
+    id("java-library")
 }
 
 java {
@@ -7,4 +7,4 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-apply from: '../upload.gradle'
+apply(from = "../upload.gradle.kts")

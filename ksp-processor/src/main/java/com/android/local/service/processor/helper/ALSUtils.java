@@ -2,12 +2,10 @@ package com.android.local.service.processor.helper;
 
 import java.util.Locale;
 
-import javax.lang.model.type.TypeMirror;
-
 public class ALSUtils {
 
-    public static String getParamStatementByParamType(String paramKey, TypeMirror paramType) {
-        String type = paramType.toString().toLowerCase(Locale.ROOT);
+    public static String getParamStatementByParamType(String paramKey, String paramType) {
+        String type = paramType.toLowerCase(Locale.ROOT);
         if (type.contains("<") && type.contains(">")) {  //排除List<> Map<> Set<> Queue<> ....
             return paramKey;
         } else {
@@ -29,8 +27,8 @@ public class ALSUtils {
         }
     }
 
-    public static String getDefaultValueByParamTypeWhenNull(String paramValue, TypeMirror paramType) {
-        String type = paramType.toString().toLowerCase(Locale.ROOT);
+    public static String getDefaultValueByParamTypeWhenNull(String paramValue, String paramType) {
+        String type = paramType.toLowerCase(Locale.ROOT);
         if (type.contains("int")) {
             return "0";
         } else if (type.contains("boolean")) {
