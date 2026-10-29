@@ -18,7 +18,8 @@
     implementation 'io.github.mahongyin.android-local-service:core-lite:0.1.6' //不支持上传文件，够用
     implementation 'io.github.mahongyin.android-local-service:core:0.1.6'
     implementation 'io.github.mahongyin.android-local-service:annotation:0.1.6' //上面2个都已包含
-    kapt 'io.github.mahongyin.android-local-service:processor:0.1.6'
+    //kapt 'io.github.mahongyin.android-local-service:processor:0.1.6'
+    ksp("io.github.mahongyin.android-local-service:ksp-processor:0.1.6")
 ```
 
 2. 创建本地服务（具体效果可以看项目demo） 定义如下类

@@ -73,7 +73,7 @@ dependencies {
 //    implementation(project(":annotation"))
 //    implementation(project(":core"))
     implementation(project(":core-lite"))
-    "ksp"(project(":ksp-processor"))
+    ksp(project(":ksp-processor"))
     // KSP 注解处理器（替代原来的 kapt(project(":processor"))）
 
 //    implementation("io.github.mahongyin.android-local-service:annotation:${VERSION_NAME}")
