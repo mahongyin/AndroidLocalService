@@ -73,8 +73,8 @@ dependencies {
 //    implementation(project(":annotation"))
 //    implementation(project(":core"))
     implementation(project(":core-lite"))
+    // 注解处理器二选一（不要同时引入，否则会生成重复的 ALS_XXX 类）：
     //kapt(project(":processor"))
-    // KSP 注解处理器（已替代原来的 kapt(project(":processor"))）
     ksp(project(":ksp-processor"))
 
 //    implementation("io.github.mahongyin.android-local-service:annotation:${VERSION_NAME}")

@@ -6,6 +6,7 @@ import com.android.local.service.annotation.Request;
 import com.android.local.service.annotation.RequestHeader;
 import com.android.local.service.annotation.RequestSSE;
 import com.android.local.service.annotation.ServicePort;
+import com.android.local.service.annotation.UpFile;
 import com.android.local.service.annotation.UpJson;
 import com.android.local.service.annotation.UpXml;
 import com.squareup.javapoet.ClassName;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -68,11 +70,86 @@ public class ALSProcessorHelper {
     private static final String INIT_METHOD_NAME = "init";
 
     private final ProcessingEnvironment processingEnv;
+    private final TypeChecks typeChecks;
+    private final ALSUtils alsUtils;
     private final Map<Name, MethodSpec.Builder> methodSpecBuilderCache = new HashMap<>();
     private final Map<Name, TypeSpec.Builder> typeSpecBuilderCache = new HashMap<>();
 
     public ALSProcessorHelper(ProcessingEnvironment processingEnv) {
         this.processingEnv = processingEnv;
+        this.typeChecks = new TypeChecks(processingEnv);
+        this.alsUtils = new ALSUtils(processingEnv);
+    }
+
+    /**
+     * 校验参数类型。
+     * <p>
+     * 直接在遍历方法参数时调用，而不是依赖 {@code RoundEnvironment.getElementsAnnotatedWith(参数注解)}：
+     * kapt 对 Kotlin 源码里的参数注解，后者经常拿不到对应参数元素，导致校验被静默跳过。
+     */
+    public void validateParameter(VariableElement parameter) {
+        TypeMirror type = parameter.asType();
+
+        UpFile upFile = parameter.getAnnotation(UpFile.class);
+        if (upFile != null && !typeChecks.isExactlyString(type)) {
+            reportError(upFile.message(), parameter);
+        }
+        UpJson upJson = parameter.getAnnotation(UpJson.class);
+        if (upJson != null && !typeChecks.isExactlyString(type)) {
+            reportError(upJson.message(), parameter);
+        }
+        UpXml upXml = parameter.getAnnotation(UpXml.class);
+        if (upXml != null && !typeChecks.isExactlyString(type)) {
+            reportError(upXml.message(), parameter);
+        }
+        RequestHeader requestHeader = parameter.getAnnotation(RequestHeader.class);
+        if (requestHeader != null && !typeChecks.canProvideStringMap(type)) {
+            reportError(requestHeader.message(), parameter);
+        }
+
+        // 普通参数：请求参数只能读成 String，类型必须能从 String 转换
+        boolean isUploadParam = upFile != null || upJson != null || upXml != null;
+        if (requestHeader == null && !isUploadParam && !typeChecks.isSupportedRequestParam(type)) {
+            reportError(unsupportedParamMessage(parameter.getSimpleName().toString(), type), parameter);
+        }
+    }
+
+    private String unsupportedParamMessage(String paramName, TypeMirror type) {
+        return "@Request 参数「" + paramName + "」的类型 " + type
+                + " 无法从请求参数(String)转换。"
+                + "支持 int/long/short/byte/float/double/boolean 及其装箱类型、String 及其父类型（CharSequence、Object 等）；"
+                + "集合、数组、枚举、Date、自定义实体等请声明为 String 后自行解析。";
+    }
+
+    /**
+     * 用 Messager 报错（而不是抛异常），错误会挂在出问题的参数上，避免 javac 打印处理器异常堆栈
+     */
+    private void reportError(String message, Element element) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
+    }
+
+    /**
+     * 为 @RequestHeader 参数生成声明语句。
+     * <ul>
+     *   <li>Map / MutableMap / 可空 Map / 原始类型 Map：直接引用 {@code headersMap}，不产生额外对象；</li>
+     *   <li>HashMap / ConcurrentHashMap / TreeMap 等具体子类：用 Map 拷贝构造函数生成
+     *       {@code new HashMap<String,String>(headersMap)}。
+     *       原因是泛型不协变，{@code HashMap<String,String> h = headersMap;} 无法编译；</li>
+     *   <li>SortedMap / NavigableMap / ConcurrentMap 等接口：构造一个可赋给该接口的具体实现。</li>
+     * </ul>
+     */
+    private void addHeaderParamStatement(MethodSpec.Builder builder, String paramKey, TypeMirror paramType) {
+        if (typeChecks.acceptsStringMap(paramType)) {
+            builder.addStatement("$T $N = $N", paramType, paramKey, REQUEST_HEADER_NAME);
+            return;
+        }
+        TypeMirror implementation = typeChecks.headerImplementation(paramType);
+        if (implementation == null) {
+            // 类型校验阶段已报错，这里退化为直接传参，保证生成源码语法完整
+            builder.addStatement("$T $N = $N", paramType, paramKey, REQUEST_HEADER_NAME);
+            return;
+        }
+        builder.addStatement("$T $N = new $T($N)", paramType, paramKey, implementation, REQUEST_HEADER_NAME);
     }
 
     private void createTypeSpecBuilder(TypeElement typeElement) {
@@ -279,11 +356,12 @@ public class ALSProcessorHelper {
                 String paramKey = variableElement.getSimpleName().toString();
                 TypeMirror paramType = variableElement.asType();
                 log("《Request注解》Param参数 key = " + paramKey + "-----paramType = " + paramType);
+                validateParameter(variableElement);
 
                 RequestHeader headerAnnotation = variableElement.getAnnotation(RequestHeader.class);
                 if (headerAnnotation != null && variableElement.getKind() == ElementKind.PARAMETER) {
                     // 有header 获取header没有就捕获取
-                    builder.addStatement("$T $N = $N", paramType, paramKey, REQUEST_HEADER_NAME);
+                    addHeaderParamStatement(builder, paramKey, paramType);
                 } else {
                     builder.addStatement("String $N = $N.get($S)", paramKey, SECOND_PARAM_NAME, paramKey);
 
@@ -306,10 +384,10 @@ public class ALSProcessorHelper {
                     }
 
                     builder.beginControlFlow("if ($N == null)", paramKey)
-                            .addStatement("$N = $S", paramKey, ALSUtils.getDefaultValueByParamTypeWhenNull(paramKey, paramType))
+                            .addStatement("$N = $S", paramKey, alsUtils.getDefaultValueByParamTypeWhenNull(paramKey, paramType))
                             .endControlFlow();
                 }
-                String realValue = ALSUtils.getParamStatementByParamType(paramKey, paramType);
+                String realValue = alsUtils.getParamStatementByParamType(paramKey, paramType);
 
                 if (index > 0) {
                     stringBuffer.append(", ").append(realValue);
@@ -354,11 +432,12 @@ public class ALSProcessorHelper {
                 String paramKey = variableElement.getSimpleName().toString();
                 TypeMirror paramType = variableElement.asType();
                 log("《Request注解》Param参数 key = " + paramKey + "-----paramType = " + paramType);
+                validateParameter(variableElement);
 
                 RequestHeader headerAnnotation = variableElement.getAnnotation(RequestHeader.class);
                 if (headerAnnotation != null && variableElement.getKind() == ElementKind.PARAMETER) {
                     // 有header 获取header没有就捕获取
-                    builder.addStatement("$T $N = $N", paramType, paramKey, REQUEST_HEADER_NAME);
+                    addHeaderParamStatement(builder, paramKey, paramType);
                 } else {
                     builder.addStatement("String $N = $N.get($S)", paramKey, SECOND_PARAM_NAME, paramKey);
 
@@ -381,10 +460,10 @@ public class ALSProcessorHelper {
                     }
 
                     builder.beginControlFlow("if ($N == null)", paramKey)
-                            .addStatement("$N = $S", paramKey, ALSUtils.getDefaultValueByParamTypeWhenNull(paramKey, paramType))
+                            .addStatement("$N = $S", paramKey, alsUtils.getDefaultValueByParamTypeWhenNull(paramKey, paramType))
                             .endControlFlow();
                 }
-                String realValue = ALSUtils.getParamStatementByParamType(paramKey, paramType);
+                String realValue = alsUtils.getParamStatementByParamType(paramKey, paramType);
 
                 if (index > 0) {
                     stringBuffer.append(", ").append(realValue);

@@ -23,10 +23,10 @@ import java.util.UUID
 @ServicePort(port = 2222)
 abstract class PCService {
     @RequestSSE("sseTest")
-    fun sse(content: String) : SseServer.SseListener {
+    fun sse(content: String, @RequestHeader requestHeader: Map<String, String>) : SseServer.SseListener {
         return object : SseServer.SseListener {
             override fun onOpen(sseServer: SseServer?, clientId: String?, session: IHTTPSession?) {
-                sseServer?.send(clientId, getSseMsg(clientId, "单播1 "+content))
+                sseServer?.send(clientId, getSseMsg(clientId, "单播 Cookie "+ requestHeader["cookie"]))
                 sseServer?.send(clientId, getSseMsg(clientId, "单播2 "+content))
                 sseServer?.send(clientId, getSseMsg(clientId, "单播3 "+content))
                 sseServer?.sendDone(clientId)
@@ -67,7 +67,7 @@ abstract class PCService {
     fun getIndexFileName() = "test_page.html"
 
     @Request("saveXml")
-    fun saveXml(@RequestHeader() requestHeader: Map<String, String>, @UpXml xml2: String): List<ServiceInfo> {
+    fun saveXml(@RequestHeader requestHeader: Map<String, String>, @UpXml xml2: String): List<ServiceInfo> {
         // 很另类 使用主动抛出异常 实现自定义响应, contentType默认json
         val responseHeader = mapOf(
             //"Content-Type" to "application/xml",

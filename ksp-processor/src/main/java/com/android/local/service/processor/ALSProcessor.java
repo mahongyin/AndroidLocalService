@@ -22,11 +22,11 @@ import java.util.List;
  */
 public class ALSProcessor implements SymbolProcessor {
 
-    private final ALSProcessorHelper helper;
+    private final SymbolProcessorEnvironment environment;
     private boolean generated = false;
 
     public ALSProcessor(SymbolProcessorEnvironment environment) {
-        this.helper = new ALSProcessorHelper(environment.getCodeGenerator(), environment.getLogger());
+        this.environment = environment;
     }
 
     @Override
@@ -34,6 +34,8 @@ public class ALSProcessor implements SymbolProcessor {
         // 一轮生成完即可，后续轮次不再重复处理
         if (!generated) {
             generated = true;
+            ALSProcessorHelper helper = new ALSProcessorHelper(
+                    environment.getCodeGenerator(), environment.getLogger(), resolver);
 
             forEachSourceSymbol(resolver, ALSAnnotation.SERVICE_PORT, symbol -> {
                 if (symbol instanceof KSClassDeclaration) {

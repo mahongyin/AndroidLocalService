@@ -1,8 +1,8 @@
 package com.android.local.service.processor;
 
 import com.android.local.service.annotation.Page;
-import com.android.local.service.annotation.Request;
 import com.android.local.service.annotation.PageFile;
+import com.android.local.service.annotation.Request;
 import com.android.local.service.annotation.RequestHeader;
 import com.android.local.service.annotation.RequestSSE;
 import com.android.local.service.annotation.ServicePort;
@@ -10,7 +10,6 @@ import com.android.local.service.annotation.UpFile;
 import com.android.local.service.annotation.UpJson;
 import com.android.local.service.annotation.UpXml;
 import com.android.local.service.processor.helper.ALSProcessorHelper;
-import com.squareup.javapoet.TypeName;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -20,10 +19,8 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 
 public class ALSProcessor extends AbstractProcessor {
 
@@ -77,42 +74,9 @@ public class ALSProcessor extends AbstractProcessor {
                     } else if (RequestSSE.class.getName().equals(annotationClassName)) {
                         alsProcessorHelper.processSSE((ExecutableElement) element);
                     }
-                } else if (element instanceof VariableElement) {//参数
-                    //alsProcessorHelper.processParam((VariableElement) element);
-                    if (element.getKind() == ElementKind.PARAMETER) {
-                        // 处理带有@UpFile注解的参数
-                        UpFile fileAnnotation = element.getAnnotation(UpFile.class);
-                        if (fileAnnotation != null) {
-                            String type = element.asType().toString();
-//                            System.out.println("paramType:" + String.class.getCanonicalName());
-//                            System.out.println("paramType:" + String.class.getName());
-                            if (!type.equals(TypeName.get(String.class).toString())) {
-                                throw new IllegalArgumentException(fileAnnotation.message());
-                            }
-                        }
-                        UpJson jsonAnnotation = element.getAnnotation(UpJson.class);
-                        if (jsonAnnotation != null) {
-                            String type = element.asType().toString();
-                            if (!type.equals(TypeName.get(String.class).toString())) {
-                                throw new IllegalArgumentException(jsonAnnotation.message());
-                            }
-                        }
-                        UpXml xmlAnnotation = element.getAnnotation(UpXml.class);
-                        if (xmlAnnotation != null) {
-                            String type = element.asType().toString();
-                            if (!type.equals(TypeName.get(String.class).toString())) {
-                                throw new IllegalArgumentException(xmlAnnotation.message());
-                            }
-                        }
-                        RequestHeader headerAnnotation = element.getAnnotation(RequestHeader.class);
-                        if (headerAnnotation != null) {
-                            String type = element.asType().toString();
-                            if (!type.equals("java.util.Map<java.lang.String,java.lang.String>")) {
-                                throw new IllegalArgumentException(headerAnnotation.message());
-                            }
-                        }
-                    }
                 }
+                // 参数注解的校验放在 processRequest / processSSE 遍历参数时进行：
+                // kapt 对 Kotlin 源码的参数注解，getElementsAnnotatedWith 往往取不到参数元素
             }
         }
         alsProcessorHelper.createClassFile();

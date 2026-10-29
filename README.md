@@ -18,9 +18,39 @@
     implementation 'io.github.mahongyin.android-local-service:core-lite:0.1.6' //不支持上传文件，够用
     implementation 'io.github.mahongyin.android-local-service:core:0.1.6'
     implementation 'io.github.mahongyin.android-local-service:annotation:0.1.6' //上面2个都已包含
-    //kapt 'io.github.mahongyin.android-local-service:processor:0.1.6'
-    ksp("io.github.mahongyin.android-local-service:ksp-processor:0.1.6")
 ```
+
+注解处理器提供 **kapt** 和 **KSP** 两个版本，功能完全一致，**二选一**（同时引入会生成重复的 `ALS_XXX` 类导致 "类重复" 编译错误）：
+
+```groovy
+    // 方式一：KSP（推荐，Kotlin 2.x 下编译更快）
+    plugins { id 'com.google.devtools.ksp' }
+    ksp "io.github.mahongyin.android-local-service:ksp-processor:0.1.6"
+
+    // 方式二：kapt（兼容老项目）
+    plugins { id 'kotlin-kapt' }
+    kapt "io.github.mahongyin.android-local-service:processor:0.1.6"
+```
+
+> 两个处理器都会在编译期校验参数类型，并把错误定位到具体参数上。
+>
+> `@RequestHeader` 参数要求是 `Map<String,String>` 语义，且 **Map 可以是任意 Map**：
+>
+> | 声明 | 生成方式 |
+> |---|---|
+> | `Map<String,String>` / `MutableMap<String,String>` / 原始 `Map` | 直接传 `headersMap`，无额外对象 |
+> | `HashMap` / `LinkedHashMap` / `TreeMap` / `ConcurrentHashMap` 等具体类 | `new HashMap<>(headersMap)` 拷贝构造 |
+> | `SortedMap` / `NavigableMap` / `ConcurrentMap` 等接口 | 构造对应实现（`TreeMap` / `ConcurrentHashMap`） |
+>
+> 元素类型不是 String（如 `Map<Int,String>`）或根本不是 Map 时，会报编译错误。
+>
+> 其它普通参数会被当成 String 从请求里读取，因此形参类型必须是 **标量** 或 **String 的父类型**：
+>
+> - 支持：`Int`/`Long`/`Short`/`Byte`/`Float`/`Double`/`Boolean`（及装箱类型）、`String`、`CharSequence`、`Any`；
+> - 不支持：集合（`List<String>`）、数组、枚举、`Date`、自定义实体 —— 这类参数会在编译期直接报错，
+>   请声明为 `String` 后在方法内自行解析。
+
+
 
 2. 创建本地服务（具体效果可以看项目demo） 定义如下类
 

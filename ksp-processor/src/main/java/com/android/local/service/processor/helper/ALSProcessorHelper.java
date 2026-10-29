@@ -3,6 +3,8 @@ package com.android.local.service.processor.helper;
 import com.google.devtools.ksp.processing.CodeGenerator;
 import com.google.devtools.ksp.processing.Dependencies;
 import com.google.devtools.ksp.processing.KSPLogger;
+import com.google.devtools.ksp.processing.Resolver;
+import com.google.devtools.ksp.symbol.ClassKind;
 import com.google.devtools.ksp.symbol.KSClassDeclaration;
 import com.google.devtools.ksp.symbol.KSDeclaration;
 import com.google.devtools.ksp.symbol.KSFile;
@@ -10,8 +12,10 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration;
 import com.google.devtools.ksp.symbol.KSName;
 import com.google.devtools.ksp.symbol.KSType;
 import com.google.devtools.ksp.symbol.KSTypeArgument;
+import com.google.devtools.ksp.symbol.KSTypeAlias;
 import com.google.devtools.ksp.symbol.KSTypeReference;
 import com.google.devtools.ksp.symbol.KSValueParameter;
+import com.google.devtools.ksp.symbol.Variance;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -24,6 +28,7 @@ import com.squareup.javapoet.TypeSpec;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,17 +77,32 @@ public class ALSProcessorHelper {
     private static final String DEFAULT_UP_FILE_MESSAGE = "@使用UpFile注解的参数类型必须为String";
     private static final String DEFAULT_UP_JSON_MESSAGE = "@使用UpJson注解的参数类型必须为String";
     private static final String DEFAULT_UP_XML_MESSAGE = "@使用UpXml注解的参数类型必须为String";
-    private static final String DEFAULT_REQUEST_HEADER_MESSAGE = "@使用RequestHeader注解的参数类型必须为Map<String,String>";
+    private static final String DEFAULT_REQUEST_HEADER_MESSAGE =
+            "@使用RequestHeader注解的参数类型必须为Map<String,String>，或可用 Map 拷贝构造的具体子类（如HashMap、ConcurrentHashMap、TreeMap）";
+
+    /**
+     * 形参是 Map 接口/抽象类型时，用这些具体实现来构造一个可赋给该形参的 Map。顺序即优先级。
+     */
+    private static final String[] HEADER_IMPLEMENTATIONS = {
+            "java.util.HashMap",
+            "java.util.LinkedHashMap",
+            "java.util.TreeMap",
+            "java.util.concurrent.ConcurrentHashMap",
+            "java.util.concurrent.ConcurrentSkipListMap"
+    };
 
     private final CodeGenerator codeGenerator;
     private final KSPLogger logger;
+    private final Resolver resolver;
     private final Map<String, MethodSpec.Builder> methodSpecBuilderCache = new LinkedHashMap<>();
     private final Map<String, TypeSpec.Builder> typeSpecBuilderCache = new LinkedHashMap<>();
     private final Map<String, KSClassDeclaration> classDeclarationCache = new LinkedHashMap<>();
+    private KSType stringMapType;
 
-    public ALSProcessorHelper(CodeGenerator codeGenerator, KSPLogger logger) {
+    public ALSProcessorHelper(CodeGenerator codeGenerator, KSPLogger logger, Resolver resolver) {
         this.codeGenerator = codeGenerator;
         this.logger = logger;
+        this.resolver = resolver;
     }
 
     private void createTypeSpecBuilder(KSClassDeclaration classDeclaration) {
@@ -317,7 +337,6 @@ public class ALSProcessorHelper {
             }
             String paramKey = parameterName.asString();
             KSType paramType = parameter.getType().resolve();
-            String paramTypeString = KspUtils.typeString(paramType);
 
             boolean isHeader = KspUtils.hasAnnotation(parameter, ALSAnnotation.REQUEST_HEADER);
             boolean isUpFile = KspUtils.hasAnnotation(parameter, ALSAnnotation.UP_FILE);
@@ -334,13 +353,28 @@ public class ALSProcessorHelper {
                 validateStringParam(parameter, ALSAnnotation.UP_XML, DEFAULT_UP_XML_MESSAGE);
             }
 
+            // 普通参数：请求参数只能读成 String，类型必须能从 String 转换
+            if (!isHeader && !isUpFile && !isUpJson && !isUpXml && !isSupportedRequestParam(paramType)) {
+                logger.error(unsupportedParamMessage(paramKey, paramType), parameter);
+            }
+
             if (isHeader) {
-                validateHeaderParam(parameter);
-                // 直接使用 handleRequest 的 headersMap 形参，无需再声明局部变量
+                HeaderPlan plan = headerPlan(paramType);
+                if (plan.handling == HeaderHandling.INVALID) {
+                    String message = KspUtils.annotationString(parameter, ALSAnnotation.REQUEST_HEADER, "message");
+                    logger.error(message == null ? DEFAULT_REQUEST_HEADER_MESSAGE : message, parameter);
+                }
                 if (!first) {
                     arguments.add(", ");
                 }
-                arguments.add("$L", REQUEST_HEADER_NAME);
+                if (plan.handling == HeaderHandling.CONSTRUCT && plan.implementation != null) {
+                    // 具体 Map 子类或接口：泛型不协变，Map<String,String> 不能直接赋给 HashMap/SortedMap，
+                    // 需要用拷贝构造生成一个可赋给该形参的实现
+                    arguments.add("new $T<>($L)", plan.implementation, REQUEST_HEADER_NAME);
+                } else {
+                    // Map / MutableMap / 原始类型 Map：直接使用 handleRequest 的 headersMap 形参
+                    arguments.add("$L", REQUEST_HEADER_NAME);
+                }
                 first = false;
                 continue;
             }
@@ -357,13 +391,13 @@ public class ALSProcessorHelper {
                         .endControlFlow();
             }
             builder.beginControlFlow("if ($N == null)", paramKey)
-                    .addStatement("$N = $S", paramKey, ALSUtils.getDefaultValueByParamTypeWhenNull(paramKey, paramTypeString))
+                    .addStatement("$N = $S", paramKey, ALSUtils.getDefaultValueByParamTypeWhenNull(paramKey, paramType))
                     .endControlFlow();
 
             if (!first) {
                 arguments.add(", ");
             }
-            arguments.add("$L", ALSUtils.getParamStatementByParamType(paramKey, paramTypeString));
+            arguments.add("$L", ALSUtils.getParamStatementByParamType(paramKey, paramType));
             first = false;
         }
         return arguments.build();
@@ -376,23 +410,229 @@ public class ALSProcessorHelper {
         }
     }
 
-    private void validateHeaderParam(KSValueParameter parameter) {
-        KSType type = parameter.getType().resolve();
-        List<KSTypeArgument> typeArguments = type.getArguments();
-        boolean isStringKeyValue = typeArguments.size() == 2
-                && isStringTypeArgument(typeArguments.get(0))
-                && isStringTypeArgument(typeArguments.get(1));
-        if (!KspUtils.isMapType(type) || !isStringKeyValue) {
-            String message = KspUtils.annotationString(parameter, ALSAnnotation.REQUEST_HEADER, "message");
-            logger.error(message == null ? DEFAULT_REQUEST_HEADER_MESSAGE : message, parameter);
+    /**
+     * 该类型能否作为普通请求参数（非 @RequestHeader / 非上传参数）。
+     * <p>
+     * 生成代码会把请求参数读成 String 再转换，因此形参类型必须满足其一：
+     * 标量（Int/Long/Short/Byte/Float/Double/Boolean 及装箱类型），或 String 的父类型
+     * （String、CharSequence、Any 等）。集合、数组、枚举、自定义实体都不支持。
+     */
+    private boolean isSupportedRequestParam(KSType type) {
+        if (ALSUtils.isConvertibleScalar(type)) {
+            return true;
+        }
+        return isAssignable(type, resolver.getBuiltIns().getStringType());
+    }
+
+    private String unsupportedParamMessage(String paramName, KSType type) {
+        return "@Request 参数「" + paramName + "」的类型 " + type
+                + " 无法从请求参数(String)转换。"
+                + "支持 Int/Long/Short/Byte/Float/Double/Boolean 及其装箱类型、String 及其父类型（CharSequence、Any 等）；"
+                + "集合、数组、枚举、Date、自定义实体等请声明为 String 后自行解析。";
+    }
+
+    /**
+     * 判断 @RequestHeader 参数的处理方式（与 kapt 版语义保持一致）：
+     * <ul>
+     *   <li>{@link HeaderHandling#PASS_THROUGH}：Map / MutableMap / java.util.Map / 原始类型 Map / 可赋值的通配类型，
+     *       直接传 {@code headersMap}；</li>
+     *   <li>{@link HeaderHandling#CONSTRUCT}：HashMap / TreeMap 等具体子类，或 SortedMap / NavigableMap / ConcurrentMap
+     *       等接口，生成 {@code new X<>(headersMap)} 拷贝构造；</li>
+     *   <li>{@link HeaderHandling#INVALID}：其余类型（例如 Map&lt;String,Object&gt;）。</li>
+     * </ul>
+     */
+    private HeaderPlan headerPlan(KSType paramType) {
+        KSType stringMap = stringMapType();
+        if (KspUtils.isMapType(paramType)) {
+            boolean rawMap = paramType.getArguments().isEmpty();
+            if (rawMap || hasStringKeyValueArguments(paramType) || isAssignable(paramType, stringMap)) {
+                return HeaderPlan.passThrough();
+            }
+            return HeaderPlan.invalid();
+        }
+        if (stringMap == null) {
+            return HeaderPlan.invalid();
+        }
+        // 具体 Map 子类（HashMap / TreeMap / 自定义 Map 类）
+        if (isConstructibleItself(paramType)) {
+            return HeaderPlan.construct(javaClassNameOf(paramType));
+        }
+        // Map 接口（SortedMap / NavigableMap / ConcurrentMap 等）：挑一个可赋给它的具体实现
+        ClassName implementation = headerImplementation(paramType);
+        return implementation != null ? HeaderPlan.construct(implementation) : HeaderPlan.invalid();
+    }
+
+    /**
+     * 形参自身是否是可 new 出来、且带 Map 拷贝构造的具体 Map 类
+     */
+    private boolean isConstructibleItself(KSType paramType) {
+        KSType mapType = stringMapType();
+        if (mapType == null || !isAssignable(mapType, paramType)) {
+            // mapType.isAssignableFrom(paramType)：paramType 是 Map 的子类型
+            return false;
+        }
+        KSClassDeclaration classDeclaration = classDeclarationOf(paramType);
+        if (classDeclaration == null) {
+            return false;
+        }
+        if (classDeclaration.getClassKind() != ClassKind.CLASS) {
+            return false;
+        }
+        if (classDeclaration.getModifiers().contains(Modifier.ABSTRACT)) {
+            return false;
+        }
+        return hasMapConstructor(classDeclaration);
+    }
+
+    /**
+     * 为接口型/抽象型 Map 形参挑选一个可赋给它的具体实现，找不到时返回 null
+     */
+    private ClassName headerImplementation(KSType paramType) {
+        for (String implementationName : HEADER_IMPLEMENTATIONS) {
+            KSClassDeclaration declaration = resolver.getClassDeclarationByName(
+                    resolver.getKSNameFromString(implementationName));
+            if (declaration == null) {
+                continue;
+            }
+            KSType candidate;
+            try {
+                candidate = declaration.asType(stringTypeArguments());
+            } catch (RuntimeException e) {
+                continue;
+            }
+            if (isAssignable(paramType, candidate)) {
+                return javaClassNameOf(candidate);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * paramType 能否接收 candidate（即 candidate 可赋给 paramType）
+     */
+    private boolean isAssignable(KSType paramType, KSType candidate) {
+        if (paramType == null || candidate == null) {
+            return false;
+        }
+        try {
+            return paramType.isAssignableFrom(candidate);
+        } catch (RuntimeException e) {
+            return false;
         }
     }
 
-    private boolean isStringTypeArgument(KSTypeArgument typeArgument) {
-        if (typeArgument.getType() == null) {
+    private boolean hasStringKeyValueArguments(KSType type) {
+        List<KSTypeArgument> arguments = type.getArguments();
+        if (arguments.size() != 2) {
             return false;
         }
-        return KspUtils.isStringType(typeArgument.getType().resolve());
+        KSTypeArgument key = arguments.get(0);
+        KSTypeArgument value = arguments.get(1);
+        return key.getType() != null && value.getType() != null
+                && KspUtils.isStringType(key.getType().resolve())
+                && KspUtils.isStringType(value.getType().resolve());
+    }
+
+    /**
+     * Map&lt;String,String&gt; 的两个 String 类型实参
+     */
+    private List<KSTypeArgument> stringTypeArguments() {
+        KSType stringType = resolver.getBuiltIns().getStringType();
+        KSTypeArgument stringArgument = resolver.getTypeArgument(
+                resolver.createKSTypeReferenceFromKSType(stringType), Variance.INVARIANT);
+        return Arrays.asList(stringArgument, stringArgument);
+    }
+
+    /**
+     * 取类型对应的类声明，遇到 typealias 时展开到真实类型。
+     * <p>
+     * Kotlin 的 {@code HashMap} 是 {@code java.util.HashMap} 的 typealias，
+     * KSP 给出的声明是 {@link KSTypeAlias} 而不是 {@link KSClassDeclaration}，
+     * 不展开就会被误判成"不是 Map 子类"。
+     */
+    private KSClassDeclaration classDeclarationOf(KSType type) {
+        KSDeclaration declaration = type.getDeclaration();
+        if (declaration instanceof KSTypeAlias) {
+            KSType aliased = ((KSTypeAlias) declaration).getType().resolve();
+            return classDeclarationOf(aliased);
+        }
+        return declaration instanceof KSClassDeclaration ? (KSClassDeclaration) declaration : null;
+    }
+
+    /**
+     * 是否存在接收 Map 的构造函数。
+     * <p>
+     * KSP 只直接暴露主构造函数；类库里的 Java 类型可能拿不到构造器信息，
+     * 这种情况按"可构造"处理，由 javac 在生成代码后做最终校验（标准 Map 实现都有该构造函数）。
+     */
+    private boolean hasMapConstructor(KSClassDeclaration classDeclaration) {
+        KSType mapType = stringMapType();
+        if (mapType == null) {
+            return false;
+        }
+        KSFunctionDeclaration primaryConstructor = classDeclaration.getPrimaryConstructor();
+        if (primaryConstructor == null) {
+            return true;
+        }
+        List<KSValueParameter> parameters = primaryConstructor.getParameters();
+        if (parameters.size() != 1) {
+            return false;
+        }
+        try {
+            return parameters.get(0).getType().resolve().isAssignableFrom(mapType);
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    /**
+     * 取 KSP 类型在 Java 里对应的类名（不含泛型），用于 {@code new X<>(...)}。
+     * <p>
+     * 先用 {@link #classDeclarationOf(KSType)} 展开 typealias
+     * （Kotlin 的 {@code HashMap} 实际是 {@code java.util.HashMap}），
+     * 再对残留的 kotlin.* 名字做 Java 名字映射，避免生成 {@code kotlin.collections.HashMap} 这种 Java 不存在的类名。
+     */
+    private ClassName javaClassNameOf(KSType type) {
+        KSClassDeclaration classDeclaration = classDeclarationOf(type);
+        String name = null;
+        if (classDeclaration != null) {
+            KSName qualifiedName = classDeclaration.getQualifiedName();
+            if (qualifiedName != null) {
+                String kotlinName = qualifiedName.asString();
+                if (kotlinName.startsWith("kotlin.")) {
+                    KSName javaName = null;
+                    try {
+                        javaName = resolver.mapKotlinNameToJava(qualifiedName);
+                    } catch (RuntimeException ignored) {
+                        // 映射失败时退回原始名字
+                    }
+                    name = javaName != null ? javaName.asString() : kotlinName;
+                } else {
+                    name = kotlinName;
+                }
+            }
+        }
+        if (name == null) {
+            name = "java.util.HashMap";
+        }
+        int index = name.lastIndexOf('.');
+        return index > 0 ? ClassName.get(name.substring(0, index), name.substring(index + 1)) : ClassName.bestGuess(name);
+    }
+
+    /**
+     * 构造 Map&lt;String,String&gt; 的 KSType，用于可赋值性比较
+     */
+    private KSType stringMapType() {
+        if (stringMapType != null) {
+            return stringMapType;
+        }
+        KSClassDeclaration mapDeclaration = resolver.getClassDeclarationByName(
+                resolver.getKSNameFromString(KspUtils.KOTLIN_MAP));
+        if (mapDeclaration == null) {
+            return null;
+        }
+        stringMapType = mapDeclaration.asType(stringTypeArguments());
+        return stringMapType;
     }
 
     private boolean isUnitReturnType(KSFunctionDeclaration function) {
@@ -406,5 +646,43 @@ public class ALSProcessorHelper {
     private KSClassDeclaration parentClassOf(KSFunctionDeclaration function) {
         KSDeclaration parent = function.getParentDeclaration();
         return parent instanceof KSClassDeclaration ? (KSClassDeclaration) parent : null;
+    }
+
+    /**
+     * @RequestHeader 参数的三种处理方式
+     */
+    private enum HeaderHandling {
+        /** 直接传 headersMap */
+        PASS_THROUGH,
+        /** 用 Map 拷贝构造 new X<>(headersMap) */
+        CONSTRUCT,
+        /** 不支持的类型 */
+        INVALID
+    }
+
+    /**
+     * @RequestHeader 参数的处理计划：怎么处理 + 用哪个实现类构造
+     */
+    private static final class HeaderPlan {
+
+        final HeaderHandling handling;
+        final ClassName implementation;
+
+        private HeaderPlan(HeaderHandling handling, ClassName implementation) {
+            this.handling = handling;
+            this.implementation = implementation;
+        }
+
+        static HeaderPlan passThrough() {
+            return new HeaderPlan(HeaderHandling.PASS_THROUGH, null);
+        }
+
+        static HeaderPlan construct(ClassName implementation) {
+            return new HeaderPlan(HeaderHandling.CONSTRUCT, implementation);
+        }
+
+        static HeaderPlan invalid() {
+            return new HeaderPlan(HeaderHandling.INVALID, null);
+        }
     }
 }

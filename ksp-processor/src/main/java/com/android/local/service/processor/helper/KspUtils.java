@@ -167,39 +167,6 @@ public final class KspUtils {
     public static boolean isMapType(KSType type) {
         return isTypeOneOf(type, KOTLIN_MAP, KOTLIN_MUTABLE_MAP, JAVA_MAP);
     }
-    /**
-     * KSP 类型转成便于做字符串判断的类型描述，例如：
-     * kotlin.String、kotlin.Int、kotlin.collections.List&lt;kotlin.String&gt;
-     */
-    public static String typeString(KSType type) {
-        if (type == null) {
-            return "";
-        }
-        StringBuilder builder = new StringBuilder();
-        KSDeclaration declaration = type.getDeclaration();
-        KSName qualifiedName = declaration.getQualifiedName();
-        builder.append(qualifiedName != null ? qualifiedName.asString() : declaration.getSimpleName().asString());
-        if (!type.getArguments().isEmpty()) {
-            builder.append('<');
-            List<KSTypeArgument> arguments = type.getArguments();
-            for (int i = 0; i < arguments.size(); i++) {
-                if (i > 0) {
-                    builder.append(',');
-                }
-                KSTypeArgument argument = arguments.get(i);
-                if (argument.getType() == null) {
-                    builder.append('*');
-                } else {
-                    builder.append(typeString(argument.getType().resolve()));
-                }
-            }
-            builder.append('>');
-        }
-        if (type.isMarkedNullable()) {
-            builder.append('?');
-        }
-        return builder.toString();
-    }
 
     public static String qualifiedNameOf(KSDeclaration declaration) {
         if (declaration == null) {

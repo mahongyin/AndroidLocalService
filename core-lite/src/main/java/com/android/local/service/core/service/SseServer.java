@@ -587,9 +587,9 @@ public class SseServer extends NanoHTTPD {
      */
     private static String frame(String event, String data, String id) {
         StringBuilder sb = new StringBuilder(64);
-        if (id != null && id.length() > 0) {
-            sb.append("id: ").append(field(id)).append('\n');
-        }
+//        if (id != null && id.length() > 0) {
+//            sb.append("id: ").append(field(id)).append('\n');
+//        }
         if (event != null && event.length() > 0) {
             sb.append("event: ").append(field(event)).append('\n');
         }
